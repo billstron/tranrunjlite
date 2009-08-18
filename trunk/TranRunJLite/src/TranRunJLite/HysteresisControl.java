@@ -30,15 +30,33 @@
  */
 package TranRunJLite;
 
-/**
+/** Hysteresis Controller for single-input, single-output systems.
+ * This class is used as an extension of the SISOFeedback class
+ * and implements a Hysteresid control algorithm.  
+ * This class is also abstract -- to use it the user must 'extend'
+ * this class and define FindProcessValue() and PutActuationValue(double val)
+ * so the controller can get its input and know where to place its output.
  *
  * @author William Burke <billstron@gmail.com>
  */
-public class HysteresisControl extends SISOFeedback {
+public abstract class HysteresisControl extends SISOFeedback {
 
     double hystMax, ant;
-    double e;
 
+    /** Super constructor for Hysteresis Control
+     *
+     * @param name
+     * @param sys
+     * @param dt -- how often to run.  
+     * @param mMin -- Minimum actuation value
+     * @param mMax -- Maximum actuation value
+     * @param mOff -- Actuation value for off condition
+     * @param initialState
+     * @param taskActive
+     * @param hystMax -- Single sided hysteresis bound
+     * @param ant -- Anticipator value.  
+     * @param triggerMode
+     */
     public HysteresisControl(String name, TrjSys sys, double dt,
             double mMin, double mMax, double mOff,
             int initialState, boolean taskActive,
@@ -46,23 +64,90 @@ public class HysteresisControl extends SISOFeedback {
 
         super(name, sys, dt, mMin, mMax, mOff, triggerMode, initialState,
                 taskActive);
-        this.hystMax = hystMax;
-        this.ant = ant;
-        this.e = 0;
+        this.hystMax = Math.abs(hystMax);
+        this.ant = Math.abs(ant);
+        this.err = 0;
     }
+    // States
+    final int HYST_OFF = 0;
+    final int HYST_ON = 1;
+    // Commands (public so they're accessible to user-defined classes)
+    public final int HYST_START_CONTROL = 0;
+    public final int HYST_STOP_CONTROL = 1;
 
-    @Override
-    public double FindProcessValue() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public void PutActuationValue(double val) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
+    /** Runs the hysteresis control.
+     * 
+     * @param sys
+     * @return
+     */
     public boolean RunTask(TrjSys sys) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        double t = sys.GetRunningTime();
+        if (!CheckTime(t)) {
+            return false;  // Wait for the next sample time
+        }
+        // get the process value and compute the error
+        y = FindProcessValue();
+        err = setpoint - y;
+
+        switch (currentState) {
+            case HYST_OFF:  // Controller is off
+                if (runEntry) {
+                    runEntry = false;
+                    PutActuationValue(mOff);
+                }
+                // Transition test
+                nextState = -1;  // Default, stay in this state
+                // Check for command to start control
+                if (GetCommand() == HYST_START_CONTROL) {
+                    nextState = HYST_ON;
+                }
+                break;
+
+            case HYST_ON: // Run the control
+                if (runEntry) {
+                    runEntry = false;
+                    first = true;
+                }
+                // Apply the anticipator.
+                err -= Math.signum(m) * ant;
+
+                // Check if heating or cooling
+                if (m > mMin) {
+                    // Currently in heating mode (naturally or forced)
+                    // Wait until error passes the heating hysterisis
+                    // point before switching to cooling
+                    System.out.println("error " + err);
+                    if (err <= -hystMax) {
+                        m = mMin;  // Switch to cooling
+                    }
+                    // Otherwise, leave actuation as-is
+                } else {
+                    // Currently in cooling mode (naturally or forced)
+                    // Set actuation according to sign of error
+                    System.out.println("error " + err);
+                    if (err > hystMax) {
+                        m = mMax;
+                    } else {
+                        m = mMin;
+                    }
+                }
+                LimitActuation();  // Keep 'm' in bounds
+                PutActuationValue(m);  // send to the actuator.  
+                first = false;  // reset the flag
+
+                // Transition test
+                nextState = -1;  // Default, stay in this state
+                // Check for command to stop control
+                if (GetCommand() == HYST_STOP_CONTROL) {
+                    nextState = HYST_OFF;
+                }
+                break;
+
+            default:  // shouldn't get here.  
+                System.out.printf("<HysteresisControl> Unknown state (%d)\n",
+                        currentState);
+                System.exit(1);
+        }
+        return false;
     }
 }
