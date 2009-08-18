@@ -88,6 +88,13 @@ public abstract class PWMGenerator extends TrjTask {
     public void setDutyRatio(double ratio) {
         //System.out.println("Set Duty Ratio: " + ratio);
         this.ratio = ratio;
+        // set the saturation
+        if (this.ratio > 1.0) {
+            this.ratio = 1.0;
+        }
+        if (this.ratio < -1.0) {
+            this.ratio = -1.0;
+        }
     }
 
     /** Trigger the PWM.
@@ -109,7 +116,7 @@ public abstract class PWMGenerator extends TrjTask {
      * 
      * @return
      */
-    public double getSignal(){
+    public double getSignal() {
         return this.sig;
     }
 
@@ -117,7 +124,7 @@ public abstract class PWMGenerator extends TrjTask {
      * 
      * @return
      */
-    public double getDirectionBit(){
+    public double getDirectionBit() {
         return this.dir;
     }
 
@@ -125,7 +132,7 @@ public abstract class PWMGenerator extends TrjTask {
      * 
      * @return
      */
-    public double getDutyRatio(){
+    public double getDutyRatio() {
         return this.ratio;
     }
 
@@ -139,6 +146,7 @@ public abstract class PWMGenerator extends TrjTask {
      */
     @Override
     public boolean RunTask(TrjSys sys) {
+        boolean rerun = false;
         if (sys.GetRunningTime() >= tNext) {
             // parse the command
             int cmd = GetCommand();
@@ -148,28 +156,28 @@ public abstract class PWMGenerator extends TrjTask {
             if (cmd == OFF_MODE) {
                 mode = OFF_MODE;
             }
-            // in trigger mode, force new transition to low head state
+            // calculate the low/high/low times based on the start time.
+            //System.out.println("Duty Ratio: " + ratio);
+            tOnTotal = Math.abs(ratio) * period;
+            tOffHead = tStart;
+            if (tOffHead >= (period - tOnTotal)) {
+                tOffHead = period - tOnTotal;
+            }
+            tOffTail = period - tOnTotal - tOffHead;
+            // in trigger mode, force new transition
             if (triggerMode && trigger) {
                 currentState = LOWHEAD_STATE;
                 runEntry = true;
                 trigger = false;
             }
-            // calculate the low/high/low times based on the start time.
-            //System.out.println("Duty Ratio: " + ratio);
-            tOnTotal = ratio * period;
-            tOffHead = tStart;
-            if (tOffHead > (period - tOnTotal)) {
-                tOffHead = period - tOnTotal;
-            }
-            tOffTail = period - tOffHead;
             // go into the states
             switch (currentState) {
 
                 case LOWHEAD_STATE:  // no power output at the start
                     if (runEntry) {
-                        System.out.println("Low Head State entry");
-                        System.out.printf("%3.3f, %3.3f, %3.3f\n", tOffHead,
-                                tOnTotal, tOffTail);
+                        //System.out.println("Low Head State entry at " + sys.GetRunningTime());
+                        //System.out.printf("%3.3f, %3.3f, %3.3f\n", tOffHead,
+                        //        tOnTotal, tOffTail);
                         tSig = 0;  // reset the running time
                         runEntry = false;
                     }
@@ -181,6 +189,10 @@ public abstract class PWMGenerator extends TrjTask {
                     // transition when the off head time is up
                     if (tSig >= tOffHead) {
                         nextState = HIGH_STATE;
+                        // rerun if the timer was zero
+                        if (tOffHead < dt) {
+                            rerun = true;
+                        }
                     }
                     // then based on the mode
                     if (mode == OFF_MODE) {
@@ -190,7 +202,7 @@ public abstract class PWMGenerator extends TrjTask {
 
                 case HIGH_STATE:  // power output
                     if (runEntry) {
-                        System.out.println("High State entry");
+                        //System.out.println("High State entry at " + sys.GetRunningTime());
                         tSig = 0;  // reset the running time
                         runEntry = false;
                     }
@@ -208,6 +220,12 @@ public abstract class PWMGenerator extends TrjTask {
                     nextState = -1;
                     if (tSig >= tOnTotal) {
                         nextState = LOWTAIL_STATE;
+                        //System.out.println("tOnTotal: " + tOnTotal);
+                        // rerun if the timer was zero
+                        if (tOnTotal < dt) {
+                            rerun = true;
+                            //System.out.println("here");
+                        }
                     }
                     // then based on the mode
                     if (mode == OFF_MODE) {
@@ -217,7 +235,7 @@ public abstract class PWMGenerator extends TrjTask {
 
                 case LOWTAIL_STATE:  // off at the tail of the period
                     if (runEntry) {
-                        System.out.println("Low Tail State entry");
+                        //System.out.println("Low Tail State entry at " + sys.GetRunningTime());
                         tSig = 0;  // reset the running time
                         runEntry = false;
                     }
@@ -228,7 +246,6 @@ public abstract class PWMGenerator extends TrjTask {
                     nextState = -1;
                     // decide based on the trigger mode.  
                     if (triggerMode) {
-                        System.out.println("here");
                         // in trigger mode.
                         // don't transition
                     } else {
@@ -236,6 +253,10 @@ public abstract class PWMGenerator extends TrjTask {
                         // transition when the off head time is up
                         if (tSig >= tOffTail) {
                             nextState = LOWHEAD_STATE;
+                            // rerun if the timer was zero
+                            if (tOffTail < dt) {
+                                rerun = true;
+                            }
                         }
                     }
                     // then based on the regurlar mode
@@ -244,11 +265,15 @@ public abstract class PWMGenerator extends TrjTask {
                     }
                     break;
             }
+            // if it needs to be rerun, don't update the timer.  
+            if (!rerun) {
+                tNext += dt;
+            }
         } else { // just make sure the run entry flag stays on
             if (runEntry) {
                 nextState = currentState;
             }
         }
-        return false;
+        return rerun;
     }
 }

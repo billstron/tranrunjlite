@@ -116,7 +116,7 @@ public abstract class HysteresisControl extends SISOFeedback {
                     // Currently in heating mode (naturally or forced)
                     // Wait until error passes the heating hysterisis
                     // point before switching to cooling
-                    System.out.println("error " + err);
+                    //System.out.println("error " + err);
                     if (err <= -hystMax) {
                         m = mMin;  // Switch to cooling
                     }
@@ -124,7 +124,7 @@ public abstract class HysteresisControl extends SISOFeedback {
                 } else {
                     // Currently in cooling mode (naturally or forced)
                     // Set actuation according to sign of error
-                    System.out.println("error " + err);
+                    //System.out.println("error " + err);
                     if (err > hystMax) {
                         m = mMax;
                     } else {
