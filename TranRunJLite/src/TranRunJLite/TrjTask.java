@@ -38,7 +38,7 @@ import java.util.ArrayList;
  */
 public abstract class TrjTask {
 
-    String name;
+    protected String name;
     protected int currentState;
     protected int nextState;
     protected int initialState;
@@ -51,7 +51,7 @@ public abstract class TrjTask {
     TrjSys sys;  // The system that this task is part of
     double tNext, tPrev;  // If this task is sample-time based, these are
     // the times for the next and previous execution times
-    double dtNominal, dtActual; // Desired and actual execution intervals
+    protected double dtNominal, dtActual; // Desired and actual execution intervals
     boolean useNominalDT = true;
     boolean triggerMode;  // Runs only on a trigger rather than time
     boolean trigger;

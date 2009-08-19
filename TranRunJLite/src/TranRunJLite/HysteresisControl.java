@@ -69,11 +69,8 @@ public abstract class HysteresisControl extends SISOFeedback {
         this.err = 0;
     }
     // States
-    final int HYST_OFF = 0;
-    final int HYST_ON = 1;
-    // Commands (public so they're accessible to user-defined classes)
-    public final int HYST_START_CONTROL = 0;
-    public final int HYST_STOP_CONTROL = 1;
+    private final int HYST_OFF = 0;
+    private final int HYST_ON = 1;
 
     /** Determines when to run the task
      * 
@@ -105,7 +102,7 @@ public abstract class HysteresisControl extends SISOFeedback {
                 // Transition test
                 nextState = -1;  // Default, stay in this state
                 // Check for command to start control
-                if (GetCommand() == HYST_START_CONTROL) {
+                if (GetCommand() == SISO_START_CONTROL) {
                     nextState = HYST_ON;
                 }
                 break;
@@ -145,7 +142,7 @@ public abstract class HysteresisControl extends SISOFeedback {
                 // Transition test
                 nextState = -1;  // Default, stay in this state
                 // Check for command to stop control
-                if (GetCommand() == HYST_STOP_CONTROL) {
+                if (GetCommand() == SISO_STOP_CONTROL) {
                     nextState = HYST_OFF;
                 }
                 break;
