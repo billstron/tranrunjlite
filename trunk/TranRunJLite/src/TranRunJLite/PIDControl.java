@@ -43,6 +43,8 @@ public abstract class PIDControl extends SISOFeedback
     double kp, ki, kd;  // Control gains
     double integ0;  // Initial value of integrator
     double integ;  // Integrator value
+    double prop;
+    double deriv;
     double prevError;
     boolean useAntiWindup;
 
@@ -88,9 +90,14 @@ public abstract class PIDControl extends SISOFeedback
     final int PID_OFF = 0;
     final int PID_ON = 1;
 
-    // Commands (public so they're accessible to user-defined classes)
-    public final int PID_START_CONTROL = 0;
-    public final int PID_STOP_CONTROL = 1;
+    /** Check to see if this task is ready to run
+     * @param sys The system in which this task is embedded
+     * @return "true" if this task is ready to run
+     */
+    public boolean RunTaskNow(TrjSys sys)
+    {
+        return CheckTime(sys.GetRunningTime());
+    }
 
     /** RunTask() - This is where the control algorithm goes
      * @param sys The TrjSys of which this task is part
@@ -99,9 +106,10 @@ public abstract class PIDControl extends SISOFeedback
      */
     public boolean RunTask(TrjSys sys)
     {
-        double t = sys.GetRunningTime();
-        if(!CheckTime(t))return false;  // Wait for the next sample time
-
+        //double t = sys.GetRunningTime();
+        if(useNominalDT)dt = dtNominal;
+        else dt = dtActual;
+        
         y = FindProcessValue();
         err = setpoint - y;
 
@@ -117,7 +125,7 @@ public abstract class PIDControl extends SISOFeedback
                 // Transition test
                 nextState = -1;  // Default, stay in this state
                 // Check for command to start control
-                if(GetCommand() == PID_START_CONTROL)nextState = PID_ON;
+                if(GetCommand() == SISO_START_CONTROL)nextState = PID_ON;
                 break;
 
             case PID_ON:
@@ -129,9 +137,6 @@ public abstract class PIDControl extends SISOFeedback
                 }
 
                 // Action section
-                double prop;
-                double deriv;
-
                 prop = kp * err;
                 if(first)
                 {
@@ -140,9 +145,9 @@ public abstract class PIDControl extends SISOFeedback
                 }
                 else
                 {
-                    deriv = kd * (err - prevError);
+                    deriv = kd * (err - prevError) / dt;
                 }
-                integ += ki * err;
+                integ += ki * err * dt;
 
                 if(useAntiWindup)
                 {
@@ -170,7 +175,7 @@ public abstract class PIDControl extends SISOFeedback
                 // Transition test
                 nextState = -1;  // Default, stay in this state
                 // Check for command to stop control
-                if(GetCommand() == PID_STOP_CONTROL)nextState = PID_OFF;
+                if(GetCommand() == SISO_STOP_CONTROL)nextState = PID_OFF;
                 break;
 
                 default:

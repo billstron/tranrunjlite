@@ -36,13 +36,13 @@ package TranRunJLite;
  */
 public abstract class PWMGenerator extends TrjTask {
 
-    private double dt, tNext;
+    private double dt;
     private double period, tSig;
     private double tStart = 0;
     private double tOffHead, tOffTail, tOnTotal;
     private double ratio;
-    private boolean triggerMode;
-    private boolean trigger;
+    private boolean PwmTriggerMode;
+    private boolean PwmTrigger;
     private double sig = 0.0;
     private int dir = 1;
     private double sigHigh, sigLow;
@@ -64,8 +64,8 @@ public abstract class PWMGenerator extends TrjTask {
         this.dt = dt;
         this.tNext = 0;
         this.period = period;
-        this.triggerMode = triggerMode;
-        this.trigger = false;
+        this.PwmTriggerMode = triggerMode;
+        this.PwmTrigger = false;
     }
     /** State definition
      */
@@ -101,7 +101,7 @@ public abstract class PWMGenerator extends TrjTask {
      * 
      */
     public void trigger() {
-        this.trigger = true;
+        this.PwmTrigger = true;
     }
 
     /** Set the start time for the pulse.  
@@ -136,6 +136,14 @@ public abstract class PWMGenerator extends TrjTask {
         return this.ratio;
     }
 
+    /** Check to see if this task is ready to run
+     * @param sys The system in which this task is embedded
+     * @return "true" if this task is ready to run
+     */
+    public boolean RunTaskNow(TrjSys sys) {
+        return CheckTime(sys.GetRunningTime());
+    }
+
     /** Run the states.
      * In trigger mode, the next pulse only fires when the trigger has been set.
      * When it is set, any current pulse is aborted, and the new pulse begins
@@ -146,133 +154,125 @@ public abstract class PWMGenerator extends TrjTask {
      */
     @Override
     public boolean RunTask(TrjSys sys) {
+        // allows for rerunning the task
         boolean rerun = false;
-        if (sys.GetRunningTime() >= tNext) {
-            // parse the command
-            int cmd = GetCommand();
-            if (cmd == ON_MODE) {
-                mode = ON_MODE;
-            }
-            if (cmd == OFF_MODE) {
-                mode = OFF_MODE;
-            }
-            // calculate the low/high/low times based on the start time.
-            //System.out.println("Duty Ratio: " + ratio);
-            tOnTotal = Math.abs(ratio) * period;
-            tOffHead = tStart;
-            if (tOffHead >= (period - tOnTotal)) {
-                tOffHead = period - tOnTotal;
-            }
-            tOffTail = period - tOnTotal - tOffHead;
-            // in trigger mode, force new transition
-            if (triggerMode && trigger) {
-                currentState = LOWHEAD_STATE;
-                runEntry = true;
-                trigger = false;
-            }
-            // go into the states
-            switch (currentState) {
 
-                case LOWHEAD_STATE:  // no power output at the start
-                    if (runEntry) {
-                        //System.out.println("Low Head State entry at " + sys.GetRunningTime());
-                        //System.out.printf("%3.3f, %3.3f, %3.3f\n", tOffHead,
-                        //        tOnTotal, tOffTail);
-                        tSig = 0;  // reset the running time
-                        runEntry = false;
+        // parse the command
+        int cmd = GetCommand();
+        if (cmd == ON_MODE) {
+            mode = ON_MODE;
+        }
+        if (cmd == OFF_MODE) {
+            mode = OFF_MODE;
+        }
+        // calculate the low/high/low times based on the start time.
+        //System.out.println("Duty Ratio: " + ratio);
+        tOnTotal = Math.abs(ratio) * period;
+        tOffHead = tStart;
+        if (tOffHead >= (period - tOnTotal)) {
+            tOffHead = period - tOnTotal;
+        }
+        tOffTail = period - tOnTotal - tOffHead;
+        // in trigger mode, force new transition
+        if (PwmTriggerMode && PwmTrigger) {
+            currentState = LOWHEAD_STATE;
+            runEntry = true;
+            PwmTrigger = false;
+        }
+        // go into the states
+        switch (currentState) {
+
+            case LOWHEAD_STATE:  // no power output at the start
+                if (runEntry) {
+                    //System.out.println("Low Head State entry at " + sys.GetRunningTime());
+                    //System.out.printf("%3.3f, %3.3f, %3.3f\n", tOffHead,
+                    //        tOnTotal, tOffTail);
+                    tSig = 0;  // reset the running time
+                    runEntry = false;
+                }
+                tSig += dt;  // update the running time
+                sig = sigLow;  // set the signal
+                PutActuationValue(sig, dir);
+                // Compute the transition.
+                nextState = -1;
+                // transition when the off head time is up
+                if (tSig >= tOffHead) {
+                    nextState = HIGH_STATE;
+                    // rerun if the timer was zero
+                    if (tOffHead < dt) {
+                        rerun = true;
                     }
-                    tSig += dt;  // update the running time
-                    sig = sigLow;  // set the signal
-                    PutActuationValue(sig, dir);
-                    // Compute the transition.
-                    nextState = -1;
+                }
+                // then based on the mode
+                if (mode == OFF_MODE) {
+                    nextState = LOWTAIL_STATE;
+                }
+                break;
+
+            case HIGH_STATE:  // power output
+                if (runEntry) {
+                    //System.out.println("High State entry at " + sys.GetRunningTime());
+                    tSig = 0;  // reset the running time
+                    runEntry = false;
+                }
+                tSig += dt;  // update the running time
+                // Determine the outputs.
+                sig = sigHigh;  // set the signal
+                // determine the direction bit
+                if (ratio >= 0) {
+                    dir = FORWARD;
+                } else {
+                    dir = BACKWARD;
+                }
+                PutActuationValue(sig, dir);
+                // determine the transition.
+                nextState = -1;
+                if (tSig >= tOnTotal) {
+                    nextState = LOWTAIL_STATE;
+                    //System.out.println("tOnTotal: " + tOnTotal);
+                    // rerun if the timer was zero
+                    if (tOnTotal < dt) {
+                        rerun = true;
+                        //System.out.println("here");
+                        }
+                }
+                // then based on the mode
+                if (mode == OFF_MODE) {
+                    nextState = LOWTAIL_STATE;
+                }
+                break;
+
+            case LOWTAIL_STATE:  // off at the tail of the period
+                if (runEntry) {
+                    //System.out.println("Low Tail State entry at " + sys.GetRunningTime());
+                    tSig = 0;  // reset the running time
+                    runEntry = false;
+                }
+                tSig += dt;  // update the running time
+                sig = sigLow;  // set the signal
+                PutActuationValue(sig, dir);
+                // Compute the transition.
+                nextState = -1;
+                // decide based on the trigger mode.
+                if (PwmTriggerMode) {
+                    // in trigger mode.
+                    // don't transition
+                    } else {
+                    // in time based mode.
                     // transition when the off head time is up
-                    if (tSig >= tOffHead) {
-                        nextState = HIGH_STATE;
+                    if (tSig >= tOffTail) {
+                        nextState = LOWHEAD_STATE;
                         // rerun if the timer was zero
-                        if (tOffHead < dt) {
+                        if (tOffTail < dt) {
                             rerun = true;
                         }
                     }
-                    // then based on the mode
-                    if (mode == OFF_MODE) {
-                        nextState = LOWTAIL_STATE;
-                    }
-                    break;
-
-                case HIGH_STATE:  // power output
-                    if (runEntry) {
-                        //System.out.println("High State entry at " + sys.GetRunningTime());
-                        tSig = 0;  // reset the running time
-                        runEntry = false;
-                    }
-                    tSig += dt;  // update the running time
-                    // Determine the outputs.
-                    sig = sigHigh;  // set the signal
-                    // determine the direction bit
-                    if (ratio >= 0) {
-                        dir = FORWARD;
-                    } else {
-                        dir = BACKWARD;
-                    }
-                    PutActuationValue(sig, dir);
-                    // determine the transition.
+                }
+                // then based on the regurlar mode
+                if (mode == OFF_MODE) {
                     nextState = -1;
-                    if (tSig >= tOnTotal) {
-                        nextState = LOWTAIL_STATE;
-                        //System.out.println("tOnTotal: " + tOnTotal);
-                        // rerun if the timer was zero
-                        if (tOnTotal < dt) {
-                            rerun = true;
-                            //System.out.println("here");
-                        }
-                    }
-                    // then based on the mode
-                    if (mode == OFF_MODE) {
-                        nextState = LOWTAIL_STATE;
-                    }
-                    break;
-
-                case LOWTAIL_STATE:  // off at the tail of the period
-                    if (runEntry) {
-                        //System.out.println("Low Tail State entry at " + sys.GetRunningTime());
-                        tSig = 0;  // reset the running time
-                        runEntry = false;
-                    }
-                    tSig += dt;  // update the running time
-                    sig = sigLow;  // set the signal
-                    PutActuationValue(sig, dir);
-                    // Compute the transition.
-                    nextState = -1;
-                    // decide based on the trigger mode.  
-                    if (triggerMode) {
-                        // in trigger mode.
-                        // don't transition
-                    } else {
-                        // in time based mode.  
-                        // transition when the off head time is up
-                        if (tSig >= tOffTail) {
-                            nextState = LOWHEAD_STATE;
-                            // rerun if the timer was zero
-                            if (tOffTail < dt) {
-                                rerun = true;
-                            }
-                        }
-                    }
-                    // then based on the regurlar mode
-                    if (mode == OFF_MODE) {
-                        nextState = -1;
-                    }
-                    break;
-            }
-            // if it needs to be rerun, don't update the timer.  
-            if (!rerun) {
-                tNext += dt;
-            }
-        } else { // just make sure the run entry flag stays on
-            if (runEntry) {
-                nextState = currentState;
-            }
+                }
+                break;
         }
         return rerun;
     }

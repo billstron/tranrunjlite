@@ -3,14 +3,14 @@ Copyright (c) 2009, Regents of the University of California
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
+ are permitted provided that the following conditions are met:
 
- * Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
-documentation and/or other materials provided with the distribution.
- * Neither the name of the University of California, Berkeley
+    * Redistributions of source code must retain the above copyright notice,
+       this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of the University of California, Berkeley
 nor the names of its contributors may be used to endorse or promote
 products derived from this software without specific prior written permission.
 
@@ -26,7 +26,8 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+*/
+
 package TranRunJLiteSamples;
 
 import TranRunJLite.*;
@@ -36,9 +37,9 @@ import ODEsolver.*;
  * Motor inductance is ignored
  * @author DMAuslander, July 10, 2009
  */
-public class MotorSim extends TrjTask {
+public class MotorSim extends TrjTask
+{
     // Motor parameters
-
     double v;  // applied voltage, volts
     double r;  // coil resistance, ohms
     double iM; // motor current, A
@@ -65,10 +66,11 @@ public class MotorSim extends TrjTask {
     double stepSize;
     double stepMin;
     boolean useAdaptiveSolver;
+
     MotorODE mm = null;   // Simulation object
     int nStates = 4;
-    double[] x0 = new double[nStates];
-    double[] abstol = new double[nStates];  // Absolute and relative tolerances
+    double [] x0 = new double[nStates];
+    double [] abstol = new double[nStates];  // Absolute and relative tolerances
     double reltol;
 
     /**
@@ -89,19 +91,21 @@ public class MotorSim extends TrjTask {
     public MotorSim(
             String name,
             TrjSys sys,
-            double v, // applied voltage, volts
-            double r, // coil resistance, ohms
-            double rotorInertia, // kg-m^2 (gram-cm^2 in motor spec)
-            double rotorDamping, // friction (damping) on motor, Nm/(rad/sec)
-            double torqueK, // motor torque constant, Nm/A
+            double v,  // applied voltage, volts
+            double r,  // coil resistance, ohms
+            double rotorInertia,  // kg-m^2 (gram-cm^2 in motor spec)
+            double rotorDamping,  // friction (damping) on motor, Nm/(rad/sec)
+            double torqueK,  // motor torque constant, Nm/A
             double backEmfK, // back EMF constant, V/(rad/sec)
-            double loadInertia, // kg-m^2
-            double shaftK, // shaft rotary spring constant, Nm/rad
-            double shaftB, // Damping of connection, Nm/(rad/sec)
-            double loadB, // friction (damping) on load, Nm/(rad/sec)
-            double gearRatio, // unitless (gr > 1 means motor
-            // turns faster than load)
-            boolean useAdaptiveSolver) {
+            double loadInertia,  // kg-m^2
+            double shaftK,  // shaft rotary spring constant, Nm/rad
+            double shaftB,  // Damping of connection, Nm/(rad/sec)
+            double loadB,  // friction (damping) on load, Nm/(rad/sec)
+            double gearRatio,  // unitless (gr > 1 means motor
+                        // turns faster than load)
+            boolean useAdaptiveSolver
+            )
+    {
         super(name, sys, 0 /*initial state*/, true /*taskActive*/);
         this.v = v;
         this.r = r;
@@ -115,12 +119,13 @@ public class MotorSim extends TrjTask {
         this.loadB = loadB;
         this.gearRatio = gearRatio;
         this.useAdaptiveSolver = useAdaptiveSolver;
-
+        
         tLast = 0.0;
         // Create an ODE (simulation) object
         // State variables:
         //  velMotor, angleMotor, velLoad, angleLoad
-        for (int i = 0; i < nStates; i++) {
+        for(int i = 0; i < nStates; i++)
+        {
             x0[i] = 0.0;  // State variable initial values
             abstol[i] = 1.e-4;  // Absolute tolerance for adaptive solvers
         }
@@ -128,46 +133,62 @@ public class MotorSim extends TrjTask {
 
         mm = new MotorODE(
                 nStates, //int nn,
-                x0, //double xx0[],
+                x0,  //double xx0[],
                 0.0, //double t0,
-                abstol, //double [] abstol,
+                abstol,  //double [] abstol,
                 reltol //double reltol
                 );
         stepMin = 1.e-7;  // Smallest allowable adaptive step size
         stepSize = 1.e-4;  // Nominal step size
     }
 
-    @Override
-    public boolean RunTask(TrjSys sys) {
+    public boolean RunTaskNow(TrjSys sys)
+    {
         // The simulation runs all the time and has no states.
-        // This method just moves the simulation forward to the
-        // current time.
         tCur = sys.GetRunningTime();
-        if (tCur <= tLast) {
+        if(tCur <= tLast)
+        {
+            // Make sure time has moved forward
             tLast = tCur;
             return false;
         }
+        else return true;
+    }
+
+    @Override
+    public boolean RunTask(TrjSys sys)
+    {
+        // The simulation runs all the time and has no states.
+        // This method just moves the simulation forward to the
+        // current time.
         // Run the simulation to the current time
-        if (useAdaptiveSolver) {
+
+        tCur = sys.GetRunningTime();
+        if(useAdaptiveSolver)
+        {
             lastStep = mm.multiStepAdaptive(tCur - tLast, stepSize, stepMin);
             stepSize = lastStep;  // For the next iteration
-        } else {
-            mm.multiStepFixed(tCur - tLast, stepSize);
+        }
+        else
+        {
+            mm.multiStepFixed(tCur - tLast,stepSize);
         }
         tLast = tCur;
         return false;
     }
 
     // Create an inner class for the simulation
-    public class MotorODE extends RKF45 {
-
-        public MotorODE(int nn, double xx0[], double t0,
-                double[] abstol, double reltol) {
-            super(nn, xx0, t0, abstol, reltol);
+    public class MotorODE extends RKF45
+    {
+        public MotorODE(int nn,double xx0[],double t0,
+                double [] abstol,double reltol)
+        {
+            super(nn,xx0,t0,abstol,reltol);
         }
 
         @Override
-        public void deriv() {
+        public void deriv()
+        {
             // State variables:
             // velMotor, angleMotor, velLoad, angleLoad
             omegaMotor = x[0];
@@ -185,7 +206,8 @@ public class MotorSim extends TrjTask {
             torqueDamp = shaftB * (omegaMotor / gearRatio - omegaLoad);
             // This gives acceleration of the motor inertia
             dx[0] = (torqueMotor - motorFrict -
-                    (torqueSpring / gearRatio) - (torqueDamp / gearRatio)) / rotorInertia;
+                    (torqueSpring / gearRatio) - (torqueDamp / gearRatio))
+                    / rotorInertia;
             dx[1] = omegaMotor;  // d angleMotor / dt = omegaMotor
 
             // Now do the load side
