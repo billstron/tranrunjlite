@@ -36,7 +36,6 @@ package TranRunJLite;
  */
 public abstract class PWMGenerator extends TrjTask {
 
-    private double dt;
     private double period, tSig;
     private double tStart = 0;
     private double tOffHead, tOffTail, tOnTotal;
@@ -48,25 +47,13 @@ public abstract class PWMGenerator extends TrjTask {
     private double sigHigh, sigLow;
     private int mode;
 
+    /** This must be defined in the sub-class.
+     * 
+     * @param pwr
+     * @param dir
+     */
     public abstract void PutActuationValue(double pwr, int dir);
-
-    public PWMGenerator(String name, TrjSys sys, double period, double sigLow,
-            double sigHigh, double dt, boolean triggerMode,
-            boolean taskActive) {
-        super(name, sys, 0, taskActive);
-
-        // add the state names to the list
-        stateNames.add("Low State");
-        stateNames.add("High State");
-
-        this.sigHigh = sigHigh;
-        this.sigLow = sigLow;
-        this.dt = dt;
-        this.tNext = 0;
-        this.period = period;
-        this.PwmTriggerMode = triggerMode;
-        this.PwmTrigger = false;
-    }
+    
     /** State definition
      */
     private final int LOWHEAD_STATE = 0;
@@ -80,6 +67,24 @@ public abstract class PWMGenerator extends TrjTask {
      */
     public final int FORWARD = 1;
     public final int BACKWARD = -1;
+
+    public PWMGenerator(String name, TrjSys sys, double period, double sigLow,
+            double sigHigh, double dt, boolean triggerMode,
+            boolean taskActive) {
+        super(name, sys, 0, taskActive);
+
+        // add the state names to the list
+        stateNames.add("Low State");
+        stateNames.add("High State");
+
+        this.sigHigh = sigHigh;
+        this.sigLow = sigLow;
+        this.dtNominal = dt;
+        this.period = period;
+        this.PwmTriggerMode = triggerMode;
+        this.PwmTrigger = false;
+        this.mode = ON_MODE;
+    }
 
     /** Set the current duty ratio.  
      * 
@@ -152,11 +157,9 @@ public abstract class PWMGenerator extends TrjTask {
      * @param sys
      * @return
      */
-    @Override
     public boolean RunTask(TrjSys sys) {
         // allows for rerunning the task
         boolean rerun = false;
-
         // parse the command
         int cmd = GetCommand();
         if (cmd == ON_MODE) {
@@ -190,7 +193,7 @@ public abstract class PWMGenerator extends TrjTask {
                     tSig = 0;  // reset the running time
                     runEntry = false;
                 }
-                tSig += dt;  // update the running time
+                tSig += dtNominal;  // update the running time
                 sig = sigLow;  // set the signal
                 PutActuationValue(sig, dir);
                 // Compute the transition.
@@ -199,7 +202,7 @@ public abstract class PWMGenerator extends TrjTask {
                 if (tSig >= tOffHead) {
                     nextState = HIGH_STATE;
                     // rerun if the timer was zero
-                    if (tOffHead < dt) {
+                    if (tOffHead < dtNominal) {
                         rerun = true;
                     }
                 }
@@ -215,7 +218,7 @@ public abstract class PWMGenerator extends TrjTask {
                     tSig = 0;  // reset the running time
                     runEntry = false;
                 }
-                tSig += dt;  // update the running time
+                tSig += dtNominal;  // update the running time
                 // Determine the outputs.
                 sig = sigHigh;  // set the signal
                 // determine the direction bit
@@ -231,7 +234,7 @@ public abstract class PWMGenerator extends TrjTask {
                     nextState = LOWTAIL_STATE;
                     //System.out.println("tOnTotal: " + tOnTotal);
                     // rerun if the timer was zero
-                    if (tOnTotal < dt) {
+                    if (tOnTotal < dtNominal) {
                         rerun = true;
                         //System.out.println("here");
                         }
@@ -248,7 +251,7 @@ public abstract class PWMGenerator extends TrjTask {
                     tSig = 0;  // reset the running time
                     runEntry = false;
                 }
-                tSig += dt;  // update the running time
+                tSig += dtNominal;  // update the running time
                 sig = sigLow;  // set the signal
                 PutActuationValue(sig, dir);
                 // Compute the transition.
@@ -260,10 +263,11 @@ public abstract class PWMGenerator extends TrjTask {
                     } else {
                     // in time based mode.
                     // transition when the off head time is up
+                    //System.out.println("PWMGenerator.RunTask(): tSig = " + tSig + ", tOffTail = " + tOffTail);
                     if (tSig >= tOffTail) {
                         nextState = LOWHEAD_STATE;
                         // rerun if the timer was zero
-                        if (tOffTail < dt) {
+                        if (tOffTail < dtNominal) {
                             rerun = true;
                         }
                     }
@@ -274,6 +278,8 @@ public abstract class PWMGenerator extends TrjTask {
                 }
                 break;
         }
+
+        //System.out.println("PWMGenerator.RunTask(): nextState = " + nextState);
         return rerun;
     }
 }

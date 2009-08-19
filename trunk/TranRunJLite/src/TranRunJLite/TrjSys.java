@@ -100,7 +100,7 @@ public class TrjSys {
      * @param dt
      */
     public void IncrementRunningTime(double dt) {
-        tRunning += dt;  // For simulated time
+        //tRunning += dt;  // For simulated time
         tm.incrementRunningTime(dt);
     }
 
@@ -134,20 +134,26 @@ public class TrjSys {
     public boolean RunTasks() {
         for (TrjTask tsk : taskList) {
             // Run one scan for all of the tasks
-            boolean repeatTask = false;
-            do {
-                if (!tsk.taskActive) {
-                    continue; // Skip inactive tasks
-                }
-                if (!tsk.RunTaskNow(this)) {
-                    continue;  // Skip if task doesn't want to run
-                }
-                tsk.UpdateState();  // update the states
-                repeatTask = tsk.RunTask(this);  // run the task
+            boolean runTask = true;
+            // skip inactive tasks
+            if (!tsk.taskActive) {
+                runTask = false;
+            }
+            // skip if task doesn't want to run
+            if (!tsk.RunTaskNow(this)) {
+                runTask = false;
+            }
+
+            // run as many consecutive times as it wants.
+            while (runTask) {
+                // update the states.
+                tsk.UpdateState();
+                runTask = tsk.RunTask(this);
+                // stop imedieatly if indicated.
                 if (stop) {
-                    return stop;  // Don't run any more tasks
+                    return stop;
                 }
-            } while (repeatTask);
+            }
         }
         return stop;  // Indicate whether the system has stopped running
     }
