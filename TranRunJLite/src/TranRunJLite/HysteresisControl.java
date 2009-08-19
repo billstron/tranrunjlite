@@ -75,16 +75,23 @@ public abstract class HysteresisControl extends SISOFeedback {
     public final int HYST_START_CONTROL = 0;
     public final int HYST_STOP_CONTROL = 1;
 
+    /** Determines when to run the task
+     * 
+     * @param sys
+     * @return
+     */
+    @Override
+    public boolean RunTaskNow(TrjSys sys) {
+        return CheckTime(sys.GetRunningTime());
+    }
+
     /** Runs the hysteresis control.
      * 
      * @param sys
      * @return
      */
     public boolean RunTask(TrjSys sys) {
-        double t = sys.GetRunningTime();
-        if (!CheckTime(t)) {
-            return false;  // Wait for the next sample time
-        }
+
         // get the process value and compute the error
         y = FindProcessValue();
         err = setpoint - y;

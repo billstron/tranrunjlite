@@ -50,6 +50,10 @@ public class ClothesMachine extends TrjTask {
     double dt;  // how often to run the task
     double tNext;  // next time to run the task
 
+    @Override
+    public boolean RunTaskNow(TrjSys sys) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
     /** State definitions
      *   OFF state -- draws the standby power and waits for a new load
      *   RUNNING state -- draws the running power and quits based on timer.  

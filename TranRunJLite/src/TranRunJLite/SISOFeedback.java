@@ -3,14 +3,14 @@ Copyright (c) 2009, Regents of the University of California
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
+ are permitted provided that the following conditions are met:
 
- * Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
-documentation and/or other materials provided with the distribution.
- * Neither the name of the University of California, Berkeley
+    * Redistributions of source code must retain the above copyright notice,
+       this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of the University of California, Berkeley
 nor the names of its contributors may be used to endorse or promote
 products derived from this software without specific prior written permission.
 
@@ -26,7 +26,8 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+*/
+
 package TranRunJLite;
 
 /** Base class for single-input, single-output feedback control.
@@ -34,8 +35,8 @@ package TranRunJLite;
  * algorithm.
  * @author D.M.Auslander, July 13, 2009
  */
-public abstract class SISOFeedback extends TrjTask {
-
+public abstract class SISOFeedback extends TrjTask
+{
     double setpoint;
     double m;  // Controller output, manipulated (actuation) variable
     double mMin, mMax;  // Output limits
@@ -43,14 +44,14 @@ public abstract class SISOFeedback extends TrjTask {
     double y;  // Process variable
     double err;  // error
     boolean first;  // TRUE if this is the first pass
-    boolean triggerMode;  // Runs only on a trigger rather than time
-    boolean trigger;
     double dt;  // Sampling interval
-    double tNext;  // Time for next execution
-
     public abstract double FindProcessValue();  // Used locally to get the process value
-
     public abstract void PutActuationValue(double val);  // for use by the control and to set the actuation
+
+    // Commands (public so they're accessible to user-defined classes)
+    public final int SISO_START_CONTROL = 0;
+    public final int SISO_STOP_CONTROL = 1;
+
 
     /** Constuctor for the single-input, single output feedback control
      * base class. It must be extended with a class containing and
@@ -68,21 +69,23 @@ public abstract class SISOFeedback extends TrjTask {
      * @param taskActive 'true' for state to be active
      */
     public SISOFeedback(String name, TrjSys sys, double dt,
-            double mMin, double mMax, double mOff, boolean triggerMode,
-            int initialState, boolean taskActive) {
+      double mMin, double mMax, double mOff, boolean triggerMode,
+      int initialState, boolean taskActive)
+    {
         super(name, sys, initialState, taskActive);
-        this.dt = dt;
+        this.dtNominal = dt;
         this.mMin = mMin;
         this.mMax = mMax;
         this.mOff = mOff;
         this.triggerMode = triggerMode;
         trigger = false;
+        if(triggerMode)useNominalDT = false;  // Use actual dt for control calcs
     }
 
     /** Get the value of the process value that the controller is using
      * @return The process value that the controller is using
      */
-    public double GetProcessValue() // For public access to controller values
+    public double GetProcessValue()  // For public access to controller values
     {
         return y;
     }
@@ -90,93 +93,42 @@ public abstract class SISOFeedback extends TrjTask {
     /** Get the actuation value that the controller has computer
      * @return The most recently computed actuatio value
      */
-    public double GetActuationValue() {
+    public double GetActuationValue()
+    {
         return m;
     }
 
     /** Get the setpoint the controller is currently using
      * @return The setpoint
      */
-    public double GetSetpoint() {
+    public double GetSetpoint()
+    {
         return setpoint;
     }
 
     /** Get the error value the controller is currently using
      * @return The error
      */
-    public double GetError() {
+    public double GetError()
+    {
         return err;
     }
 
     /** Set the controller's setpoint
      * @param s The setpoint
      */
-    public void SetSetpoint(double s) {
+    public void SetSetpoint(double s)
+    {
         setpoint = s;
     }
 
-    /** Set the trigger. If 'true' and if the controller is in trigger mode,
-     * this will cause the controller to run. The trigger is cleared once
-     * the controller has run.
-     * @param t Trigger value
-     */
-    public void SetTrigger(boolean t) {
-        trigger = t;
-    }
-
-    /** Set the trigger mode. If set ('true') the controller will only run
-     * when its trigger has been set by another task, usually a supervisor
-     * type of task that determines setpoints for a feedback controller.
-     * @param t Trigger mode ('true' to put controller into trigger mode)
-     */
-    public void SetTriggerMode(boolean t) {
-        triggerMode = t;
-    }
-
-    /** Set the minimum actuation value.
-     *
-     * @param mMin
-     */
-    public void setMinM(double mMin) {
-        this.mMin = mMin;
-    }
-
-    /** Set the maximum actuation value
-     *
-     * @param mMax
-     */
-    public void setMaxM(double mMax) {
-        this.mMax = mMax;
-    }
-
-    /** Check to see if this is the correct time to run the controller
-     * It will use either time or the trigger value depending on which
-     * mode the controller is in.
-     * @param t Current time
-     * @return 'true' to runt he controller now
-     */
-    public boolean CheckTime(double t) {
-        if (triggerMode) {
-            if (trigger) {
-                trigger = false;  // clear the trigger
-                return true;
-            }
-        } else if (t >= tNext) {
-            tNext += dt;  // Set up for next execution
-            return true;  // Yes, execute now
-        }
-
-        return false;  // No, not time to execute yet
-    }
 
     /** Limit the value of the actuation to stay between mMin and
      * mMax.
      */
-    public void LimitActuation() {
-        if (m > mMax) {
-            m = mMax;
-        } else if (m < mMin) {
-            m = mMin;
-        }
+    public void LimitActuation()
+    {
+        if(m > mMax)m = mMax;
+        else if(m < mMin)m = mMin;
     }
 }

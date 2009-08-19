@@ -49,6 +49,12 @@ public abstract class TrjTask {
     protected int command;  // For a command that might be sent to the task
     // The actual commands are defined in user code
     TrjSys sys;  // The system that this task is part of
+    double tNext, tPrev;  // If this task is sample-time based, these are
+    // the times for the next and previous execution times
+    double dtNominal, dtActual; // Desired and actual execution intervals
+    boolean useNominalDT = true;
+    boolean triggerMode;  // Runs only on a trigger rather than time
+    boolean trigger;
 
     /** Constructor for TrjTask
      *
@@ -123,14 +129,6 @@ public abstract class TrjTask {
         return cmd;
     }
 
-    /** Get the name of the task
-     *
-     * @return The name of the task
-     */
-    public String GetName() {
-        return this.name;
-    }
-
     /** Set the tracking state for this task. When state tracking is on
      * all state transitions will be recorded.
      * @param st Turn state tracking on (true) or off (false)
@@ -139,10 +137,61 @@ public abstract class TrjTask {
         trackState = st;
     }
 
+    /** Set the trigger. If 'true' and if the controller is in trigger mode,
+     * this will cause the controller to run. The trigger is cleared once
+     * the controller has run.
+     * @param t Trigger value
+     */
+    public void SetTrigger(boolean t) {
+        trigger = t;
+    }
+
+    /** Set the trigger mode. If set ('true') the controller will only run
+     * when its trigger has been set by another task, usually a supervisor
+     * type of task that determines setpoints for a feedback controller.
+     * @param t Trigger mode ('true' to put controller into trigger mode)
+     */
+    public void SetTriggerMode(boolean t) {
+        triggerMode = t;
+    }
+
+    /** Check to see if this is the correct time to run the controller
+     * It will use either time or the trigger value depending on which
+     * mode the controller is in.
+     * @param t Current time
+     * @return 'true' to run the controller now
+     */
+    public boolean CheckTime(double t) {
+        boolean rv = false;  // Return value
+
+        if (triggerMode) {
+            if (trigger) {
+                trigger = false;  // clear the trigger
+                rv = true;
+                dtActual = t - tPrev;
+                tPrev = t;
+            }
+        } else if (t >= tNext) {
+            tNext += dtNominal;  // Set up for next execution
+            rv = true;  // Yes, execute now
+            dtActual = t - tPrev;
+            tPrev = t;
+        }
+
+        return rv;
+    }
+
     /** Each task defines its own version of RunTask
      * This method is abstract
      * @param sys The TrjSys of which this task is a part
      * @return repeatTask; if "true" this task is repeated immediately
      */
     public abstract boolean RunTask(TrjSys sys);
+
+    /** Each task uses this method to determine whether it wants to
+     * run or not.
+     * @param sys The TrjSys of which this task is a part
+     * @return "true" to run this task now.
+     */
+    public abstract boolean RunTaskNow(TrjSys sys);
 }

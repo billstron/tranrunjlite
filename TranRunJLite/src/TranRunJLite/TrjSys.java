@@ -41,9 +41,9 @@ import java.util.GregorianCalendar;
 public class TrjSys {
 
     ArrayList<TrjTask> taskList = new ArrayList<TrjTask>();
-    //double tRunning;
-    //double tRunning0;
     TrjTime tm;
+    double tRunning;
+    double tRunning0;
     boolean stop = false;
 
     /** Constructor for class TrjSys
@@ -51,8 +51,8 @@ public class TrjSys {
      * @param t0 Initial time value
      */
     public TrjSys(double t0) {
-        //tRunning0 = t0;
-        //tRunning = 0.0;
+        tRunning0 = t0;
+        tRunning = 0.0;
         tm = new TrjTimeSim(t0);
         stop = false;
     }
@@ -85,21 +85,38 @@ public class TrjSys {
         //return tRunning;  // used before there were timers
     }
 
+    /** Set the running time to a specified time.
+     * 
+     * @param t
+     */
     public void SetRunningTime(double t) {
         double tNow = tm.getRunningTime();
         tm.incrementRunningTime(t - tNow);
         //tRunning = t - tRunning0;  // used before there were timers
     }
 
+    /** Increment the running time by the specified time.
+     * 
+     * @param dt
+     */
     public void IncrementRunningTime(double dt) {
-        //tRunning += dt;  // For simulated time
+        tRunning += dt;  // For simulated time
         tm.incrementRunningTime(dt);
     }
 
+    /** Get a date and timefor the current time based on the time
+     * structure.  
+     * @return
+     */
     public GregorianCalendar GetCalendar() {
         return tm.getCalendar();
     }
 
+    /** Get a date and time for the specified run time based on the time
+     * structure.
+     * @param t
+     * @return
+     */
     public GregorianCalendar GetClaendar(double t) {
         return tm.getCalendar(t);
     }
@@ -122,8 +139,11 @@ public class TrjSys {
                 if (!tsk.taskActive) {
                     continue; // Skip inactive tasks
                 }
-                tsk.UpdateState();
-                repeatTask = tsk.RunTask(this);
+                if (!tsk.RunTaskNow(this)) {
+                    continue;  // Skip if task doesn't want to run
+                }
+                tsk.UpdateState();  // update the states
+                repeatTask = tsk.RunTask(this);  // run the task
                 if (stop) {
                     return stop;  // Don't run any more tasks
                 }
