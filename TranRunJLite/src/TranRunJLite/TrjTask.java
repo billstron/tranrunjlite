@@ -53,7 +53,7 @@ public abstract class TrjTask {
     // the times for the next and previous execution times
     protected double dtNominal, dtActual; // Desired and actual execution intervals
     boolean useNominalDT = true;
-    boolean triggerMode;  // Runs only on a trigger rather than time
+    boolean triggerMode = false;  // Runs only on a trigger rather than time
     boolean trigger;
 
     /** Constructor for TrjTask
