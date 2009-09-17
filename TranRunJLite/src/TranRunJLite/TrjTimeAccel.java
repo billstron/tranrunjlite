@@ -30,6 +30,7 @@
  */
 package TranRunJLite;
 
+import PerfTimerPkg.*;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -50,8 +51,15 @@ public class TrjTimeAccel implements TrjTime {
      * @param accel -- time scale factor (t_sim = t_real * accel)
      */
     public TrjTimeAccel(double accel) {
-        this.nsStart = System.nanoTime();
-        this.msStart = System.currentTimeMillis();
+        String osName = System.getProperty("os.name");
+        if(osName.equalsIgnoreCase("Linux")){
+            this.nsStart = System.nanoTime();
+            this.msStart = System.currentTimeMillis();
+        } else{
+            PerfTimer.InitPerfTimer();
+            this.nsStart = (long) (PerfTimer.GetPerfTime() * 1e9);
+            this.msStart = System.currentTimeMillis();
+        }
         this.accel = accel;
     }
 
@@ -85,7 +93,16 @@ public class TrjTimeAccel implements TrjTime {
      * @return time (s) of the runtime
      */
     public double getRunningTime() {
-        return accel * (double) (System.nanoTime() - nsStart) / 1e9;
+        long nsCurrent = 0;
+
+        String osName = System.getProperty("os.name");
+
+        if(osName.equalsIgnoreCase("Linux")){
+            nsCurrent = System.nanoTime();
+        } else{
+            nsCurrent = (long) (PerfTimer.GetPerfTime() * 1e9);
+        }
+        return accel * (double) (nsCurrent - nsStart) / 1e9;
     }
 
     /** Does nothing, because the time is real time

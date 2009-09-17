@@ -34,6 +34,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
+import PerfTimerPkg.*;
 
 /**A time class for TranRunJLite that operates in real time.  
  *
@@ -48,8 +49,15 @@ public class TrjTimeReal implements TrjTime {
      * 
      */
     public TrjTimeReal() {
-        this.nsStart = System.nanoTime();
-        this.msStart = System.currentTimeMillis();
+        String osName = System.getProperty("os.name");
+        if(osName.equalsIgnoreCase("Linux")){
+            this.nsStart = System.nanoTime();
+            this.msStart = System.currentTimeMillis();
+        } else{
+            PerfTimer.InitPerfTimer();
+            this.nsStart = (long) (PerfTimer.GetPerfTime() * 1e9);
+            this.msStart = System.currentTimeMillis();
+        }
     }
 
     /** Get the Gregorian Calendar for the current time.
@@ -77,7 +85,16 @@ public class TrjTimeReal implements TrjTime {
      * @return time (s) of the runtime
      */
     public double getRunningTime() {
-        return (double) (System.nanoTime() - nsStart) / 1e9;
+        long nsCurrent = 0;
+
+        String osName = System.getProperty("os.name");
+
+        if(osName.equalsIgnoreCase("Linux")){
+            nsCurrent = System.nanoTime();
+        } else{
+            nsCurrent = (long) (PerfTimer.GetPerfTime() * 1e9);
+        }
+        return (double) (nsCurrent - nsStart) / 1e9;
     }
 
     /** Does nothing, because the time is real time
