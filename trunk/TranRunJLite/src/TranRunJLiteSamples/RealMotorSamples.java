@@ -53,6 +53,7 @@ public class RealMotorSamples
     MotorSim m = null;
     PosPID pPID = null;
     MotorCosineProfile mProfCosine = null;
+    DataLogger log = null;
 
     // To collect information (ArrayLists are more convenient to use than
     // arrays, although they are probably less efficient).
@@ -412,7 +413,7 @@ public class RealMotorSamples
                 double countsPerRev = 400.0;  // Encoder resolution
                 double pwmPerVolt = 0.1; // 10 volts converts to 1.0 duty cycle
                 realMotors = false;  // Set for operating mode
-                realTime = true;
+                realTime = false;
 
                 TrjTime timeKeeper = null;
 
@@ -518,6 +519,18 @@ public class RealMotorSamples
                 tFinal = 4.0; //8.0; // Use the longer profile for an up and back move
                 dtLog = 2.0e-3;
                 tNextLog = 0.0;
+                // Create a data logging task
+                log = new DataLogger
+                        (
+                        "DataLog1", //String name,
+                        sys, //TrjSys sys,
+                        0, //int initialState, (no states in this task)
+                        true, //boolean taskActive,
+                        dtLog, //double dt,
+                        multi, //MultiMotor mm,
+                        0.0, //double ts,
+                        tFinal //double te
+                        );
                 tNextProfile = 4.0;
                 nextProfileSet = false;
 

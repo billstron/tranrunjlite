@@ -53,9 +53,10 @@ public class DataLogger extends TrjTask
         this.ts = ts;
         this.te = te;
         // Allocate space for data
-        int n = mm.NumberOfMotors();
-        data = new double[n + 2][8];  // Allow a couple of extra rows
-        nData = 0;
+        int nMotors = mm.NumberOfMotors();
+        int nDataMax = (int)((te - ts) / dt) + 5;
+        data = new double[nDataMax + 2][nMotors * 8];
+        nData = 0;  // Number of data rows actually collected
     }
 
     @Override
@@ -64,7 +65,9 @@ public class DataLogger extends TrjTask
         // Runs only when sampling is needed
         // Fill one row of the data array
         double t = sys.GetRunningTime();
-        
+
+        mm.FillDataRow(t, data[nData]);
+        nData++;
         return false;
     }
 
@@ -72,7 +75,7 @@ public class DataLogger extends TrjTask
     public boolean RunTaskNow(TrjSys sys)
     {
         double t = sys.GetRunningTime();
-        if((t < ts) || (t > te))return false; // Not in data window yet
+        if((t < ts) || (t > te))return false; // Not in data window
         return CheckTime(t);
     }
 
