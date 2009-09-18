@@ -35,6 +35,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import PerfTimerPkg.*;
 
 /** TranRunJLite Real Motor Samples
  * @author DMAuslander, Aug. 24, 2009
@@ -411,10 +412,23 @@ public class RealMotorSamples
                 double countsPerRev = 400.0;  // Encoder resolution
                 double pwmPerVolt = 0.1; // 10 volts converts to 1.0 duty cycle
                 realMotors = false;  // Set for operating mode
-                realTime = false;
+                realTime = true;
 
-                sys = new TrjSys(0.0); // This sample uses simulated time
-                MultiMotor multi = new MultiMotor(sys, mtr, mSim, fb, prof);
+                TrjTime timeKeeper = null;
+
+                // Create a time object
+                if(realTime)
+                {
+                    timeKeeper = new TrjTimeReal();
+                }
+                else
+                {
+                    timeKeeper = new TrjTimeSim(0.0);
+                }
+                
+                sys = new TrjSys(timeKeeper); // This sample uses simulated time
+                MultiMotor multi = new MultiMotor(sys, mtr, mSim, fb, prof,
+                        realMotors);
 
                 dtVel = 0.01;
                 int motorChan = 7;  // Which channel to use for this motor
@@ -512,9 +526,19 @@ public class RealMotorSamples
                     VisaIO.vioInit();
                 }
 
+                // Create a timing histogram
+                Histogram h = new Histogram(1, 15, 1.0e-6, 2.0);
+                double tPrev = 0.0;
+                boolean first = true;  // True during first run through loop
+
                 while(sys.GetRunningTime() <= tFinal)
                 {
                     double tCur = sys.GetRunningTime();
+                    double dtLoop = tCur - tPrev;
+                    if(dtLoop > 0.008)
+                        System.out.println("t dtLoop " + tCur + " " + dtLoop);
+                    if(!first)h.HistValue(dtLoop);  // Ignore the first pass
+                    
                     if((tCur > tNextProfile) && !nextProfileSet)
                     {
                         nextProfileSet = true;
@@ -523,23 +547,7 @@ public class RealMotorSamples
                     }
 
                     // Connect motor data to simulation or real motor
-                    multi.InterfaceMotors(realMotors, tCur);
-                    /*
-                    if(realMotors)
-                    {
-                        // Real
-                        m0.setRawPos(-VisaIO.vioGetMotorPosition(motorChan, 1.0),
-                                tCur);
-                        VisaIO.vioSetMotorActuation(motorChan, m0.getRawAct());
-                    }
-                    else
-                    {
-                        // Simulation
-                        m0.setEngrgPos(m.angleMotor, tCur);
-                        m0.setEngrgVelMeas(m.omegaMotor);
-                        m.v = m0.getEngrgAct();
-                    }
-                    */
+                    multi.InterfaceMotors(tCur);
 
                     if(sys.RunTasks())break; // Run all of the tasks
                         // RunTasks() returns system stop status
@@ -577,12 +585,11 @@ public class RealMotorSamples
                         }
                     }
                     sys.IncrementRunningTime(dt);
+                    first = false;
+                    tPrev = tCur;
                 }
-                if(realMotors)
-                {
-                    // Turn off actuation
-                    VisaIO.vioSetMotorActuation(motorChan, 0.0);
-                }
+                multi.TurnOffMotors();
+                h.WriteHistogram(null);
                 break;
             }
 
