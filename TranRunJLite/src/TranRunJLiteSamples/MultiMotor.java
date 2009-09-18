@@ -100,25 +100,17 @@ public class MultiMotor
             m = mtr.get(i);
             // Connect motor data to simulation or real motor
             data[0] = t;
-            if(realMotors)
+            data[1] = m.getEngrgPos();  // Motor position
+            data[2] = m.getEngrgVelMeas(); // Measured velocity
+            data[3] = m.getRawPos();
+            data[4] = m.getEngrgVelEst();
+            data[5] = m.getRawAct();
+            if((fb.size() >= n) && (fb.get(i) != null))
             {
-/*                                     m0.getEngrgPos() * radToRev,
-                                    0.0, //radpsToRevpm * m.omegaMotor,
-                                    m0.getRawPos(),
-                                    m0.getEngrgVelEst() * radpsToRevpm,
-                                    m0.getRawAct(),
-                                    radToRev * pPID.GetSetpoint(),
-                                    radToRev * pPID.GetError());
-*/
+                data[6] = fb.get(i).GetSetpoint();
+                data[7] = fb.get(i).GetError();
             }
-            else
-            {
-                MotorSim ms = mSim.get(i);
-                // Simulation
-            }
-
-        }
-        
+        }        
     }
 
     public void InterfaceMotors(double tCur)
