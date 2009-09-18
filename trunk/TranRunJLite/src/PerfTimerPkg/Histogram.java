@@ -151,5 +151,57 @@ public class Histogram
             }                                         
         }
     }
+    public static void main(String args[]){
+        // Create a histogram
+        Histogram h = new Histogram(1, 15, 1.0e-6, 2.0);
+
+        // decide on the OS
+        boolean linux = false;
+        String osName = System.getProperty("os.name");
+        if(osName.equalsIgnoreCase("Linux")){
+            linux = true;
+            
+        } 
+        
+        // initialize the timer
+        double t0 = 0;
+        if(linux)
+        {
+            t0 = (double) ((double)System.nanoTime() / 1e9);
+        }
+        else
+        {
+            PerfTimer.InitPerfTimer();
+            t0 = PerfTimer.GetPerfTime();
+        }
+        double t = 0;
+        double tf = 5.0;
+        int nLoops = 0;
+        double tLowest = 1.e20;
+        double tHighest = 0.0;
+        double tLast = t;
+        boolean first = true;
+        System.out.println(t0);
+
+        while(t <= tf)
+        {
+            if(linux)
+            {
+                t = (double) ((double)System.nanoTime() / 1e9) - t0;
+            }
+            else
+            {
+                t = PerfTimer.GetPerfTime();
+            }
+            nLoops++;
+            double dt = t - tLast;
+            tLast = t;
+            if(first)first = false;
+            else h.HistValue(dt);  // Ignore the first pass
+        }
+
+        h.WriteHistogram(null);
+        h.WriteHistogram("hist.txt");
+    }
 
 }
