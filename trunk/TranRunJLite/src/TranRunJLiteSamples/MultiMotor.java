@@ -51,16 +51,18 @@ public class MultiMotor
     ArrayList<SISOFeedback> fb = null;
     ArrayList<ProfileGenerator> prof = null;
     TrjSys sys = null;
+    boolean realMotors;
 
     public MultiMotor(TrjSys sys, ArrayList<Motor> mtr,
             ArrayList<MotorSim> mSim, ArrayList<SISOFeedback> fb,
-            ArrayList<ProfileGenerator> prof)
+            ArrayList<ProfileGenerator> prof, boolean realMotors)
     {
         this.sys = sys;
         this.mtr = mtr;
         this.mSim = mSim;
         this.fb = fb;
         this.prof = prof;
+        this.realMotors = realMotors;
     }
 
     public void AddMotor(Motor m)
@@ -83,7 +85,43 @@ public class MultiMotor
         prof.add(p);
     }
 
-    public void InterfaceMotors(boolean realMotors, double tCur)
+    public int NumberOfMotors()
+    {
+        return mtr.size();
+    }
+
+    public void FillDataRow(double t, double [] data)
+    {
+        Motor m;
+        int n = mtr.size();  // Number of motors
+
+        for(int i = 0; i < n; i++)
+        {
+            m = mtr.get(i);
+            // Connect motor data to simulation or real motor
+            data[0] = t;
+            if(realMotors)
+            {
+/*                                     m0.getEngrgPos() * radToRev,
+                                    0.0, //radpsToRevpm * m.omegaMotor,
+                                    m0.getRawPos(),
+                                    m0.getEngrgVelEst() * radpsToRevpm,
+                                    m0.getRawAct(),
+                                    radToRev * pPID.GetSetpoint(),
+                                    radToRev * pPID.GetError());
+*/
+            }
+            else
+            {
+                MotorSim ms = mSim.get(i);
+                // Simulation
+            }
+
+        }
+        
+    }
+
+    public void InterfaceMotors(double tCur)
     {
         Motor m;
         int n = mtr.size();  // Number of motors
@@ -108,6 +146,19 @@ public class MultiMotor
                 ms.v = m.getEngrgAct();
             }
 
+        }
+    }
+
+    public void TurnOffMotors()
+    {
+        if(!realMotors)return;  // Nothing to
+        Motor m;
+        int n = mtr.size();  // Number of motors
+
+        for(int i = 0; i < n; i++)
+        {
+            m = mtr.get(i);
+            VisaIO.vioSetMotorActuation(m.actChan, 0.0);
         }
     }
 }
