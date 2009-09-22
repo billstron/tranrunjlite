@@ -43,9 +43,12 @@ import PerfTimerPkg.*;
 public class RealMotorSamples
 {
     enum Samples{SingleMotorOpenLoop, SingleMotorCosine, TwoMotorCosine};
-    static final double radToDeg = 180.0 /Math.PI;
-    static final double radToRev = 1.0 / (2.0 * Math.PI);
-    static final double radpsToRevpm = radToRev * 60.0; // rad/sec ==> rev/min
+    static final double degPerRad = 180.0 /Math.PI;
+    static final double radPerDeg = 1.0 / degPerRad;
+    static final double radPerRev = 2.0 * Math.PI;
+    static final double revPerRad = 1.0 / radPerRev;
+    static final double radPsPerRevPM = radPerRev / 60.0;
+    static final double revPmPerRadPs = 1.0 / radPsPerRevPM;
 
     boolean realMotors = false;  // Set operating mode
     boolean realTime = false;
@@ -120,8 +123,8 @@ public class RealMotorSamples
                 int motorChan = 7;  // Which channel to use for this motor
                 Motor m0 = new Motor(
                         0.0, // double r0 (initial raw position)
-                        countsPerRev * radToRev, // double engrgToRawPos
-                        countsPerRev * radToRev, // double engrgToRawVel
+                        countsPerRev / radPerRev, // double engrgToRawPos
+                        countsPerRev / radPerRev, // double engrgToRawVel
                         0.0, // double actRaw0
                         pwmPerVolt, // double engrgToRawAct
                         dtVel, // double dtVel
@@ -196,19 +199,19 @@ public class RealMotorSamples
                         {
                             dataFile0.printf("%g %g %g %g %g\n",
                                     sys.GetRunningTime(),
-                                    m0.getEngrgPos() * radToRev,
+                                    m0.getEngrgPos() * revPerRad,
                                     0.0, //radpsToRevpm * m.omegaMotor,
                                     m0.getRawPos(),
-                                    m0.getEngrgVelEst() * radpsToRevpm);
+                                    m0.getEngrgVelEst() * revPmPerRadPs);
                         }
                         else
                         {
                             dataFile0.printf("%g %g %g %g %g\n",
                                     sys.GetRunningTime(),
-                                    radToRev * m.angleMotor,
-                                    radpsToRevpm * m.omegaMotor,
-                                    radToRev * m.angleLoad,
-                                    m0.getEngrgVelEst() * radpsToRevpm);
+                                    revPerRad * m.angleMotor,
+                                    revPmPerRadPs * m.omegaMotor,
+                                    revPerRad * m.angleLoad,
+                                    m0.getEngrgVelEst() * revPmPerRadPs);
                         }
                     }
                     sys.IncrementRunningTime(dt);
@@ -242,8 +245,8 @@ public class RealMotorSamples
                 int motorChan = 7;  // Which channel to use for this motor
                 Motor m0 = new Motor(
                         0.0, // double r0 (initial raw position)
-                        countsPerRev * radToRev, // double engrgToRawPos
-                        countsPerRev * radToRev, // double engrgToRawVel
+                        countsPerRev * revPerRad, // double engrgToRawPos
+                        countsPerRev * revPerRad, // double engrgToRawVel
                         0.0, // double actRaw0
                         pwmPerVolt, // double engrgToRawAct
                         dtVel, // double dtVel
@@ -308,12 +311,12 @@ public class RealMotorSamples
                         ProfileGenerator.PROFILE_RUN, //int initialState,
                         true, //boolean taskActive,
                         0.005, //0.001, //double dtNominal,
-                        1500.0 / radpsToRevpm, //double dsdtCruise
-                        2.0e3 / radpsToRevpm, //double accel,
-                        2.0e3 / radpsToRevpm, //double decel
+                        1500.0 * radPsPerRevPM, //double dsdtCruise
+                        2.0e3 * radPsPerRevPM, //double accel,
+                        2.0e3 * radPsPerRevPM, //double decel
                         pPID // SISOFeedback cntlr
                         );
-                mProfCosine.setNewProfile(0.0, 50.5 / radToRev);  // New profile -- s0, sE
+                mProfCosine.setNewProfile(0.0, 50.5 * radPerRev);  // New profile -- s0, sE
                 mProfCosine.SetStateTracking(true);
 
                 if(realMotors)dt = 2.0e-6;  // Calibrated time
@@ -336,7 +339,7 @@ public class RealMotorSamples
                     if((tCur > tNextProfile) && !nextProfileSet)
                     {
                         nextProfileSet = true;
-                        mProfCosine.setNewProfile(50.5 / radToRev, 0.0 / radToRev);
+                        mProfCosine.setNewProfile(50.5 * radPerRev, 0.0 * radPerRev);
                         mProfCosine.SetCommand(ProfileGenerator.START_PROFILE);
                     }
 
@@ -367,25 +370,25 @@ public class RealMotorSamples
                         {
                             dataFile0.printf("%g %g %g %g %g %g %g %g\n",
                                     sys.GetRunningTime(),
-                                    m0.getEngrgPos() * radToRev,
+                                    m0.getEngrgPos() * revPerRad,
                                     0.0, //radpsToRevpm * m.omegaMotor,
                                     m0.getRawPos(),
-                                    m0.getEngrgVelEst() * radpsToRevpm,
+                                    m0.getEngrgVelEst() * revPmPerRadPs,
                                     m0.getRawAct(),
-                                    radToRev * pPID.GetSetpoint(),
-                                    radToRev * pPID.GetError());
+                                    revPerRad * pPID.GetSetpoint(),
+                                    revPerRad * pPID.GetError());
                         }
                         else
                         {
                             dataFile0.printf("%g %g %g %g %g %g %g %g\n",
                                     sys.GetRunningTime(),
-                                    radToRev * m.angleMotor,
-                                    radpsToRevpm * m.omegaMotor,
-                                    radToRev * m.angleLoad,
-                                    m0.getEngrgVelEst() * radpsToRevpm,
+                                    revPerRad * m.angleMotor,
+                                    revPmPerRadPs * m.omegaMotor,
+                                    revPerRad * m.angleLoad,
+                                    m0.getEngrgVelEst() * revPmPerRadPs,
                                     m0.getRawAct(),
-                                    radToRev * pPID.GetSetpoint(),
-                                    radToRev * pPID.GetError());
+                                    revPerRad * pPID.GetSetpoint(),
+                                    revPerRad * pPID.GetError());
                         }
                     }
                     sys.IncrementRunningTime(dt);
@@ -435,8 +438,8 @@ public class RealMotorSamples
                 int motorChan = 7;  // Which channel to use for this motor
                 Motor m0 = new Motor(
                         0.0, // double r0 (initial raw position)
-                        countsPerRev * radToRev, // double engrgToRawPos
-                        countsPerRev * radToRev, // double engrgToRawVel
+                        countsPerRev * revPerRad, // double engrgToRawPos
+                        countsPerRev * revPerRad, // double engrgToRawVel
                         0.0, // double actRaw0
                         pwmPerVolt, // double engrgToRawAct
                         dtVel, // double dtVel
@@ -503,13 +506,13 @@ public class RealMotorSamples
                         ProfileGenerator.PROFILE_RUN, //int initialState,
                         true, //boolean taskActive,
                         0.005, //0.001, //double dtNominal,
-                        1500.0 / radpsToRevpm, //double dsdtCruise
-                        2.0e3 / radpsToRevpm, //double accel,
-                        2.0e3 / radpsToRevpm, //double decel
+                        1500.0 * radPsPerRevPM, //double dsdtCruise
+                        2.0e3 * radPsPerRevPM, //double accel,
+                        2.0e3 * radPsPerRevPM, //double decel
                         pPID // SISOFeedback cntlr
                         );
 
-                mProfCosine.setNewProfile(0.0, 50.5 / radToRev);  // New profile -- s0, sE
+                mProfCosine.setNewProfile(0.0, 50.5 * radPerRev);  // New profile -- s0, sE
                 mProfCosine.SetStateTracking(true);
                 prof.add(mProfCosine);
 
@@ -555,7 +558,7 @@ public class RealMotorSamples
                     if((tCur > tNextProfile) && !nextProfileSet)
                     {
                         nextProfileSet = true;
-                        mProfCosine.setNewProfile(50.5 / radToRev, 0.0 / radToRev);
+                        mProfCosine.setNewProfile(50.5 * radPerRev, 0.0 * radPerRev);
                         mProfCosine.SetCommand(ProfileGenerator.START_PROFILE);
                     }
 
@@ -565,38 +568,7 @@ public class RealMotorSamples
                     if(sys.RunTasks())break; // Run all of the tasks
                         // RunTasks() returns system stop status
 
-                    if(tCur >= tNextLog)
-                    {
-                        tNextLog += dtLog;
-
-                        // Log data to a file
-                        if(realMotors)
-                        {
-                            dataFile0.printf("%g %g %g %g %g %g %g %g\n",
-                                    sys.GetRunningTime(),
-                                    m0.getEngrgPos() * radToRev,
-                                    0.0, //radpsToRevpm * m.omegaMotor,
-                                    m0.getRawPos(),
-                                    m0.getEngrgVelEst() * radpsToRevpm,
-                                    m0.getRawAct(),
-                                    radToRev * pPID.GetSetpoint(),
-                                    radToRev * pPID.GetError());
-                        }
-                        else
-                        {
-                            dataFile0.printf("%g %g %g %g %g %g %g %g\n",
-                                    sys.GetRunningTime(),
-                                    m0.getEngrgPos(),
-                                    //radToRev * m.angleMotor,
-                                    m0.getEngrgVelMeas()  * radpsToRevpm,
-                                    //radpsToRevpm * m.omegaMotor,
-                                    radToRev * m.angleLoad,
-                                    m0.getEngrgVelEst() * radpsToRevpm,
-                                    m0.getRawAct(),
-                                    radToRev * pPID.GetSetpoint(),
-                                    radToRev * pPID.GetError());
-                        }
-                    }
+                    // Data logging has been replaced by a separate task
                     sys.IncrementRunningTime(dt);
                     first = false;
                     tPrev = tCur;
@@ -607,7 +579,8 @@ public class RealMotorSamples
             }
 
         }
-        dataFile0.close();
+        dataFile0.close();  // Data file is opened for all samples so close it
+        log.WriteAllData("TestData.txt");
         try
         {
             // Show the data plot
@@ -626,10 +599,7 @@ public class RealMotorSamples
 
                 case SingleMotorCosine:
                 case TwoMotorCosine:
-                    if(realMotors)
-                        Runtime.getRuntime().exec("wgnuplot PosControlPlotReal.gnu -");
-                    else
-                        Runtime.getRuntime().exec("wgnuplot PosControlPlotSim.gnu -");
+                    Runtime.getRuntime().exec("wgnuplot PtToPtPlotOneMotor.gnu -");
                     break;
             }
         }
