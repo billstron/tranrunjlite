@@ -31,6 +31,9 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package TranRunJLiteSamples;
 
 import java.util.ArrayList;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import TranRunJLite.*;
 import visaio.*;
 
@@ -98,19 +101,62 @@ public class MultiMotor
         for(int i = 0; i < n; i++)
         {
             m = mtr.get(i);
+            int iMotor = n * i;
             // Connect motor data to simulation or real motor
-            data[0] = t;
-            data[1] = m.getEngrgPos();  // Motor position
-            data[2] = m.getEngrgVelMeas(); // Measured velocity
-            data[3] = m.getRawPos();
-            data[4] = m.getEngrgVelEst();
-            data[5] = m.getRawAct();
+            data[0 + iMotor] = t;
+            data[1 + iMotor] = m.getEngrgPos();  // Motor position
+            data[2 + iMotor] = m.getEngrgVelMeas(); // Measured velocity
+            data[3 + iMotor] = m.getRawPos();
+            data[4 + iMotor] = m.getEngrgVelEst();
+            data[5 + iMotor] = m.getRawAct();
             if((fb.size() >= n) && (fb.get(i) != null))
             {
-                data[6] = fb.get(i).GetSetpoint();
-                data[7] = fb.get(i).GetError();
+                data[6 + iMotor] = fb.get(i).GetSetpoint();
+                data[7 + iMotor] = fb.get(i).GetError();
             }
         }        
+    }
+
+    public void WriteAllData(String fileName, double [][] data, int nData)
+    {
+        Motor m;
+        PrintWriter f;
+
+        int n = mtr.size();  // Number of motors
+        int nCol = data[0].length;
+
+        if(fileName != null)
+        {
+            // Write a file
+            f = OpenDataFile(fileName);
+
+            for(int i = 0; i < nData; i++)
+            {
+                for(int j = 0; j < (n * nCol); j++)
+                {
+                    f.printf("%g ", data[i][j]);
+                }
+                f.printf("\n");
+            }
+            f.close();
+        }
+    }
+
+    public PrintWriter OpenDataFile(String fileName)
+    {
+        // Set up a file for writing results
+        PrintWriter dataFile0 = null;
+        try
+        {
+            FileWriter fW = new FileWriter (fileName);
+            dataFile0 = new PrintWriter ( fW );
+        }
+        catch(IOException e)
+        {
+            System.out.println("IO Error " + e);
+            System.exit(1);  // File error -- quit
+        }
+        return dataFile0;
     }
 
     public void InterfaceMotors(double tCur)

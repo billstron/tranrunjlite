@@ -71,6 +71,11 @@ public class DataLogger extends TrjTask
         return false;
     }
 
+    public void WriteAllData(String fName)
+    {
+        mm.WriteAllData(fName, data, nData);
+    }
+    
     @Override
     public boolean RunTaskNow(TrjSys sys)
     {
