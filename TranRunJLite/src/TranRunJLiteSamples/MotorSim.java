@@ -40,38 +40,38 @@ import ODEsolver.*;
 public class MotorSim extends TrjTask
 {
     // Motor parameters
-    double v;  // applied voltage, volts
-    double r;  // coil resistance, ohms
-    double iM; // motor current, A
-    double rotorInertia;  // kg-m^2 (gram-cm^2 in motor spec)
-    double rotorDamping;  // friction (damping) on motor, Nm/(rad/sec)
-    double torqueK;  // motor torque constant, Nm/A
-    double backEmfK; // back EMF constant, V/(rad/sec)
-    double backEmf; // back EMF of motor, V
-    double loadInertia;  // kg-m^2
-    double shaftK;  // shaft rotary spring constant, Nm/rad
-    double shaftB;  // Damping of connection, Nm/(rad/sec)
-    double loadB;  // friction (damping) on load, Nm/(rad/sec)
-    double gearRatio;  // unitless (gr > 1 means motor turns faster than load)
-    double angleMotor;  // motor position, rad
-    double omegaMotor;  // motor speed, rad/sec
-    double angleLoad;  // load position, rad
-    double omegaLoad;   // load speed, rad/sec
-    double torqueSpring;  // spring torque in shaft, Nm
-    double torqueDamp;  // friction torque in shaft, Nm
-    double torqueMotor; // motor applied torque, Nm
-    double tLast;  //  Time at which simulation was last run
-    double tCur;  // Current time
-    double lastStep;  // For adaptive ODE solvers
-    double stepSize;
-    double stepMin;
-    boolean useAdaptiveSolver;
+    protected double v;  // applied voltage, volts
+    protected double r;  // coil resistance, ohms
+    protected double iM; // motor current, A
+    protected double rotorInertia;  // kg-m^2 (gram-cm^2 in motor spec)
+    protected double rotorDamping;  // friction (damping) on motor, Nm/(rad/sec)
+    protected double torqueK;  // motor torque constant, Nm/A
+    protected double backEmfK; // back EMF constant, V/(rad/sec)
+    protected double backEmf; // back EMF of motor, V
+    protected double loadInertia;  // kg-m^2
+    protected double shaftK;  // shaft rotary spring constant, Nm/rad
+    protected double shaftB;  // Damping of connection, Nm/(rad/sec)
+    protected double loadB;  // friction (damping) on load, Nm/(rad/sec)
+    protected double gearRatio;  // unitless (gr > 1 means motor turns faster than load)
+    protected double angleMotor;  // motor position, rad
+    protected double omegaMotor;  // motor speed, rad/sec
+    protected double angleLoad;  // load position, rad
+    protected double omegaLoad;   // load speed, rad/sec
+    protected double torqueSpring;  // spring torque in shaft, Nm
+    protected double torqueDamp;  // friction torque in shaft, Nm
+    protected double torqueMotor; // motor applied torque, Nm
+    protected double tLast;  //  Time at which simulation was last run
+    protected double tCur;  // Current time
+    protected double lastStep;  // For adaptive ODE solvers
+    protected double stepSize;
+    protected double stepMin;
+    protected boolean useAdaptiveSolver;
 
-    MotorODE mm = null;   // Simulation object
-    int nStates = 4;
-    double [] x0 = new double[nStates];
-    double [] abstol = new double[nStates];  // Absolute and relative tolerances
-    double reltol;
+    protected MotorODE mm = null;   // Simulation object
+    protected int nStates = 4;
+    protected double [] x0 = new double[nStates];
+    protected double [] abstol = new double[nStates];  // Absolute and relative tolerances
+    protected double reltol;
 
     /**
      * Constructor for the MotorSim class
@@ -140,6 +140,16 @@ public class MotorSim extends TrjTask
                 );
         stepMin = 1.e-7;  // Smallest allowable adaptive step size
         stepSize = 1.e-4;  // Nominal step size
+    }
+
+    public MotorSim CreateClone(String newName)
+    {
+        // Create a copy of this object with all of the same parameter values
+        // except for the name
+        MotorSim ms = new MotorSim(newName, sys, v, r, rotorInertia, 
+                rotorDamping, torqueK, backEmfK, loadInertia, shaftK, shaftB, 
+                loadB, gearRatio, useAdaptiveSolver);
+        return ms;
     }
 
     public boolean RunTaskNow(TrjSys sys)

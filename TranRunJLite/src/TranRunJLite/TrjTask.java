@@ -48,13 +48,13 @@ public abstract class TrjTask {
     protected boolean taskActive;  // "true" for active
     protected int command;  // For a command that might be sent to the task
     // The actual commands are defined in user code
-    TrjSys sys;  // The system that this task is part of
-    double tNext, tPrev;  // If this task is sample-time based, these are
+    protected TrjSys sys;  // The system that this task is part of
+    protected double tNext, tPrev;  // If this task is sample-time based, these are
     // the times for the next and previous execution times
     protected double dtNominal, dtActual; // Desired and actual execution intervals
-    boolean useNominalDT = true;
-    boolean triggerMode = false;  // Runs only on a trigger rather than time
-    boolean trigger;
+    protected boolean useNominalDT = true;
+    protected boolean triggerMode = false;  // Runs only on a trigger rather than time
+    protected boolean trigger;
 
     /** Constructor for TrjTask
      *

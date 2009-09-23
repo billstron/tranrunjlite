@@ -45,7 +45,7 @@ public class Main
     static final double radToRev = 1.0 / (2.0 * Math.PI);
     static final double radpsToRevpm = radToRev * 60.0; // rad/sec ==> rev/min
 
-    MotorSim m = null;
+    MotorSim ms = null;
     PosPID pPID = null;
     MotorBoxProfile mProf = null;
     MotorTrapezoidProfile mProfTrap = null;
@@ -133,7 +133,7 @@ public class Main
 
             case MotorSim:
                 sys = new TrjSys(0.0); // This sample uses simulated time
-                m = new MotorSim(
+                ms = new MotorSim(
                         "Motor", //String name,
                         sys, //TrjSys sys,
                         2.0, //double v,  // applied voltage, volts
@@ -171,10 +171,10 @@ public class Main
                      */
                     // Log data to a file
                     dataFile0.printf("%g %g %g %g %g\n", sys.GetRunningTime(),
-                            radToRev * m.angleMotor,
-                            radpsToRevpm * m.omegaMotor,
-                            radToRev * m.angleLoad,
-                            radpsToRevpm * m.omegaLoad);
+                            radToRev * ms.angleMotor,
+                            radpsToRevpm * ms.omegaMotor,
+                            radToRev * ms.angleLoad,
+                            radpsToRevpm * ms.omegaLoad);
                     sys.IncrementRunningTime(dt);
                 }
                 break;
@@ -182,7 +182,7 @@ public class Main
             case VelocityControl:
                 sys = new TrjSys(0.0); // This sample uses simulated time
                 // Use the same motor used in the previous sample (MotorSim)
-                m = new MotorSim(
+                ms = new MotorSim(
                         "Motor", //String name,
                         sys, //TrjSys sys,
                         2.0, //double v,  // applied voltage, volts
@@ -243,11 +243,11 @@ public class Main
                     // Log data to a file
                     dataFile0.printf("%g %g %g %g %g %g %g %g\n",
                             sys.GetRunningTime(),
-                            radToRev * m.angleMotor,
-                            radpsToRevpm * m.omegaMotor,
-                            radToRev * m.angleLoad,
-                            radpsToRevpm * m.omegaLoad,
-                            m.v, 
+                            radToRev * ms.angleMotor,
+                            radpsToRevpm * ms.omegaMotor,
+                            radToRev * ms.angleLoad,
+                            radpsToRevpm * ms.omegaLoad,
+                            ms.v,
                             radpsToRevpm * vPID.GetSetpoint(),
                             radpsToRevpm * vPID.GetError());
                     sys.IncrementRunningTime(dt);
@@ -257,7 +257,7 @@ public class Main
             case PositionControl:
                 sys = new TrjSys(0.0); // This sample uses simulated time
                 // Use the same motor used in the previous samples
-                m = new MotorSim(
+                ms = new MotorSim(
                         "Motor", //String name,
                         sys, //TrjSys sys,
                         2.0, //double v,  // applied voltage, volts
@@ -318,11 +318,11 @@ public class Main
                     // Log data to a file
                     dataFile0.printf("%g %g %g %g %g %g %g %g\n",
                             sys.GetRunningTime(),
-                            radToRev * m.angleMotor,
-                            radpsToRevpm * m.omegaMotor,
-                            radToRev * m.angleLoad,
-                            radpsToRevpm * m.omegaLoad,
-                            m.v,
+                            radToRev * ms.angleMotor,
+                            radpsToRevpm * ms.omegaMotor,
+                            radToRev * ms.angleLoad,
+                            radpsToRevpm * ms.omegaLoad,
+                            ms.v,
                             radToRev * pPID.GetSetpoint(),
                             radToRev * pPID.GetError());
                     sys.IncrementRunningTime(dt);
@@ -332,7 +332,7 @@ public class Main
             case BoxProfile:
                 sys = new TrjSys(0.0); // This sample uses simulated time
                 // Use the same motor used in the previous samples
-                m = new MotorSim(
+                ms = new MotorSim(
                         "Motor", //String name,
                         sys, //TrjSys sys,
                         2.0, //double v,  // applied voltage, volts
@@ -418,11 +418,11 @@ public class Main
                         // Log data to a file
                         dataFile0.printf("%g %g %g %g %g %g %g %g\n",
                                 sys.GetRunningTime(),
-                                radToRev * m.angleMotor,
-                                radpsToRevpm * m.omegaMotor,
-                                radToRev * m.angleLoad,
-                                radpsToRevpm * m.omegaLoad,
-                                m.v,
+                                radToRev * ms.angleMotor,
+                                radpsToRevpm * ms.omegaMotor,
+                                radToRev * ms.angleLoad,
+                                radpsToRevpm * ms.omegaLoad,
+                                ms.v,
                                 radToRev * pPID.GetSetpoint(),
                                 radToRev * pPID.GetError());
                     }
@@ -433,7 +433,7 @@ public class Main
             case TrapezoidProfile:
                 sys = new TrjSys(0.0); // This sample uses simulated time
                 // Use the same motor used in the previous samples
-                m = new MotorSim(
+                ms = new MotorSim(
                         "Motor", //String name,
                         sys, //TrjSys sys,
                         2.0, //double v,  // applied voltage, volts
@@ -523,11 +523,11 @@ public class Main
                         // Log data to a file
                         dataFile0.printf("%g %g %g %g %g %g %g %g\n",
                                 sys.GetRunningTime(),
-                                radToRev * m.angleMotor,
-                                radpsToRevpm * m.omegaMotor,
-                                radToRev * m.angleLoad,
-                                radpsToRevpm * m.omegaLoad,
-                                m.v,
+                                radToRev * ms.angleMotor,
+                                radpsToRevpm * ms.omegaMotor,
+                                radToRev * ms.angleLoad,
+                                radpsToRevpm * ms.omegaLoad,
+                                ms.v,
                                 radToRev * pPID.GetSetpoint(),
                                 radToRev * pPID.GetError());
                     }
@@ -538,7 +538,7 @@ public class Main
             case CosineProfile:
                 sys = new TrjSys(0.0); // This sample uses simulated time
                 // Use the same motor used in the previous samples
-                m = new MotorSim(
+                ms = new MotorSim(
                         "Motor", //String name,
                         sys, //TrjSys sys,
                         2.0, //double v,  // applied voltage, volts
@@ -628,11 +628,11 @@ public class Main
                         // Log data to a file
                         dataFile0.printf("%g %g %g %g %g %g %g %g\n",
                                 sys.GetRunningTime(),
-                                radToRev * m.angleMotor,
-                                radpsToRevpm * m.omegaMotor,
-                                radToRev * m.angleLoad,
-                                radpsToRevpm * m.omegaLoad,
-                                m.v,
+                                radToRev * ms.angleMotor,
+                                radpsToRevpm * ms.omegaMotor,
+                                radToRev * ms.angleLoad,
+                                radpsToRevpm * ms.omegaLoad,
+                                ms.v,
                                 radToRev * pPID.GetSetpoint(),
                                 radToRev * pPID.GetError());
                     }
@@ -687,13 +687,13 @@ public class Main
             // or the load velocity. As long as the spring is very
             // stiff either should work as long as the scaling from
             // gear train is accounted for.
-            return m.omegaLoad;
+            return ms.omegaLoad;
         }
 
         @Override
         public void PutActuationValue(double val)
         {
-            m.v = val;  // Voltage to the motor
+            ms.v = val;  // Voltage to the motor
         }
 
     }
@@ -721,13 +721,13 @@ public class Main
             // or the load position. As long as the spring is very
             // stiff either should work as long as the scaling from
             // gear train is accounted for.
-            return m.angleLoad;
+            return ms.angleLoad;
         }
 
         @Override
         public void PutActuationValue(double val)
         {
-            m.v = val;  // Voltage to the motor
+            ms.v = val;  // Voltage to the motor
         }
 
     }

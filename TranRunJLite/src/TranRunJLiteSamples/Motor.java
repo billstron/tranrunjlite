@@ -50,6 +50,14 @@ public class Motor
         first = true;
     }
 
+    public Motor CreateClone()
+    {
+        // Create a copy of this motor that has all of the same parameters
+        Motor m = new Motor(rawPosition, engrgToRawPos, engrgToRawVel,
+                rawActuation, engrgToRawAct, dtVel, posChan, actChan);
+        return m;
+    }
+
     public void setRawPos(double r, double t)
     {
         rawPosition = r;

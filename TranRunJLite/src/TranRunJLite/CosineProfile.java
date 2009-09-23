@@ -39,23 +39,23 @@ package TranRunJLite;
  */
 public abstract class CosineProfile extends ProfileGenerator
 {
-    double dsdtCruise;  // Magnitude of value of dsdt during the constant
+    protected double dsdtCruise;  // Magnitude of value of dsdt during the constant
             // derivative portion of the profile
-    double Vc;  // Value of cruise vel. used during current profile
-    double accelMax, decelMax; // Magnitudes of values of the maximum acceleration
+    protected double Vc;  // Value of cruise vel. used during current profile
+    protected double accelMax, decelMax; // Magnitudes of values of the maximum acceleration
             // and deceleration (d2s/dt2)
-    double kc;  // Factor for how much of profile must be during cruise
-    double accelProf, decelProf; // Values used during actual profile
+    protected double kc;  // Factor for how much of profile must be during cruise
+    protected double accelProf, decelProf; // Values used during actual profile
             // ie, with proper sign
-    double dsdtProf;  // Value used during a specific profile for the
+    protected double dsdtProf;  // Value used during a specific profile for the
             // cruise (constant derivative) section of the profile --
             // include sign information
-    double Ta, Td;  // Accel, decel times
-    double tCruise;
-    double t1, t2;  // Switch times, accel to cruise, cruise to decel
-    double sign = 1.0;  // Direction of motion
-    double dMove;  // Magnitude of distance to be moved
-    double dAccel, dDecel, dCruise; // Magnitudes of distances
+    protected double Ta, Td;  // Accel, decel times
+    protected double tCruise;
+    protected double t1, t2;  // Switch times, accel to cruise, cruise to decel
+    protected double sign = 1.0;  // Direction of motion
+    protected double dMove;  // Magnitude of distance to be moved
+    protected double dAccel, dDecel, dCruise; // Magnitudes of distances
     final double pi = Math.PI;
 
     public CosineProfile(String name, TrjSys sys, int initialState,

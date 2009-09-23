@@ -40,13 +40,13 @@ package TranRunJLite;
  */
 public abstract class PIDControl extends SISOFeedback
 {
-    double kp, ki, kd;  // Control gains
-    double integ0;  // Initial value of integrator
-    double integ;  // Integrator value
-    double prop;
-    double deriv;
-    double prevError;
-    boolean useAntiWindup;
+    protected double kp, ki, kd;  // Control gains
+    protected double integ0;  // Initial value of integrator
+    protected double integ;  // Integrator value
+    protected double prop;
+    protected double deriv;
+    protected double prevError;
+    protected boolean useAntiWindup;
 
     /** PIDControl constructor. This class is abstract. User must extend
      * it to build an actual controller
