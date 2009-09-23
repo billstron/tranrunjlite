@@ -79,7 +79,7 @@ public class RealMotorSamples
     public void RunSamples()
     {
         // Select the problem to be solved
-        Samples s = Samples.TwoMotorCosine;
+        Samples s = Samples.SingleMotorCosine;
         TrjSys sys;
         double dt = 0.0;  // Used for samples that need a time delta
         double tFinal = 0.0;
@@ -89,6 +89,7 @@ public class RealMotorSamples
 
         // Set up a file for writing results
         PrintWriter dataFile0 = null;
+        /* Eliminate this when done with logging for all samples
         try
         {
             FileWriter fW = new FileWriter ( "dataFile0.txt" );
@@ -99,7 +100,7 @@ public class RealMotorSamples
             System.out.println("IO Error " + e);
             System.exit(1);  // File error -- quit
         }
-
+        */
         switch(s)
         {
             case SingleMotorOpenLoop:
@@ -226,184 +227,7 @@ public class RealMotorSamples
 
             case SingleMotorCosine:
             {
-                // Units for this example:
-                // Engineering     Raw          Display
-                //     Position, velocity
-                //   rad            counts       rev
-                //   rad/s          counts/s     rev/min (RPM)
-                //     Actuation
-                //   volts          duty cycle   duty cycle
-                
-                double countsPerRev = 400.0;  // Encoder resolution
-                double pwmPerVolt = 0.1; // 10 volts converts to 1.0 duty cycle
-                realMotors = false;  // Set for operating mode
-                realTime = false;
-
-                sys = new TrjSys(0.0); // This sample uses simulated time
-
-                dtVel = 0.01;
-                int motorChan = 7;  // Which channel to use for this motor
-                Motor m0 = new Motor(
-                        0.0, // double r0 (initial raw position)
-                        countsPerRev * revPerRad, // double engrgToRawPos
-                        countsPerRev * revPerRad, // double engrgToRawVel
-                        0.0, // double actRaw0
-                        pwmPerVolt, // double engrgToRawAct
-                        dtVel, // double dtVel
-                        motorChan, // int posChan
-                        motorChan // int actChan
-                        );
-                mtr.add(m0);
-
-                // Try to match the actual motor as well as possible
-                if(!realMotors)
-                {
-                    // Only create the simulation object when running in
-                    // simulation mode
-                    m = new MotorSim(
-                            "Motor", //String name,
-                            sys, //TrjSys sys,
-                            2.0, //double v,  // applied voltage, volts
-                            2.23, //double r,  // coil resistance, ohms
-                            41.7e-7, //double rotorInertia,
-                                // kg-m^2 (gram-cm^2 in motor spec; 10^-7 conversion)
-                            0.0, //2.0e-2, //double rotorDamping,
-                                    // friction (damping) on motor, Nm/(rad/sec)
-                            24.2e-3, //double torqueK,  // motor torque constant, Nm/A
-                            (1.0/394.0)*(60.0/(2.0*Math.PI)), //double backEmfK,
-                                    // back EMF constant, V/(rad/sec)
-                            50.0e-7, //double loadInertia,  // kg-m^2
-                            0.5e3, //double shaftK,  // shaft rotary spring constant, Nm/rad
-                            1.e-1, //double shaftB;  // Damping of connection, Nm/(rad/sec)
-                            0.0, //5.0e-4, //double loadB,  // friction (damping) on load, Nm/(rad/sec)
-                            1.0, //double gearRatio  // unitless (gr > 1 means motor
-                                    //turns faster than load)
-                            true // boolean useAdaptiverSolver
-                            );
-                }
-
-                // Create a PID controller
-                // See below for the definition of this "inner" class
-                pPID = new PosPID(
-                        "PosControl", //String name,
-                        sys, //TrjSys sys,
-                        0.001, //double dt, sec
-                        -10.0, //double mMin, volts
-                        10.0, //double mMax,
-                        0.0, //double mOff,
-                        1, //int initialState, start with control on
-                        true, //boolean taskActive,
-                        3.0, //double kp,
-                        20.0, //double ki,
-                        0.03, //0.04, //double kd,
-                        0.0, //double integ0,
-                        true, //boolean triggerMode,
-                        true, //boolean useAntiWindup
-                        m0 // Motor mot
-                        );
-
-                pPID.SetStateTracking(true);
-
-                // See below for the definition of this "inner" class
-                mProfCosine =new MotorCosineProfile(
-                        "MotorProfile", //String name,
-                        sys, //TrjSys sys,
-                        ProfileGenerator.PROFILE_RUN, //int initialState,
-                        true, //boolean taskActive,
-                        0.005, //0.001, //double dtNominal,
-                        1500.0 * radPsPerRevPM, //double dsdtCruise
-                        2.0e3 * radPsPerRevPM, //double accel,
-                        2.0e3 * radPsPerRevPM, //double decel
-                        pPID // SISOFeedback cntlr
-                        );
-                mProfCosine.setNewProfile(0.0, 50.5 * radPerRev);  // New profile -- s0, sE
-                mProfCosine.SetStateTracking(true);
-
-                if(realMotors)dt = 2.0e-6;  // Calibrated time
-                else dt = 1.0e-5;  // For simulated time
-                
-                tFinal = 4.0; //8.0; // Use the longer profile for an up and back move
-                dtLog = 2.0e-3;
-                tNextLog = 0.0;
-                tNextProfile = 4.0;
-                nextProfileSet = false;
-
-                if(realMotors)
-                {
-                    VisaIO.vioInit();
-                }
-                
-                while(sys.GetRunningTime() <= tFinal)
-                {
-                    double tCur = sys.GetRunningTime();
-                    if((tCur > tNextProfile) && !nextProfileSet)
-                    {
-                        nextProfileSet = true;
-                        mProfCosine.setNewProfile(50.5 * radPerRev, 0.0 * radPerRev);
-                        mProfCosine.SetCommand(ProfileGenerator.START_PROFILE);
-                    }
-
-                    // Connect motor data to simulation or real motor
-                    if(realMotors)
-                    {
-                        // Real
-                        m0.setRawPos(-VisaIO.vioGetMotorPosition(motorChan, 1.0),
-                                tCur);
-                        VisaIO.vioSetMotorActuation(motorChan, m0.getRawAct());
-                    }
-                    else
-                    {
-                        // Simulation
-                        m0.setEngrgPos(m.angleMotor, tCur);
-                        m.v = m0.getEngrgAct();
-                    }
-
-                    if(sys.RunTasks())break; // Run all of the tasks
-                        // RunTasks() returns system stop status
-
-                    if(tCur >= tNextLog)
-                    {
-                        tNextLog += dtLog;
-
-                        // Log data to a file
-                        if(realMotors)
-                        {
-                            dataFile0.printf("%g %g %g %g %g %g %g %g\n",
-                                    sys.GetRunningTime(),
-                                    m0.getEngrgPos() * revPerRad,
-                                    0.0, //radpsToRevpm * m.omegaMotor,
-                                    m0.getRawPos(),
-                                    m0.getEngrgVelEst() * revPmPerRadPs,
-                                    m0.getRawAct(),
-                                    revPerRad * pPID.GetSetpoint(),
-                                    revPerRad * pPID.GetError());
-                        }
-                        else
-                        {
-                            dataFile0.printf("%g %g %g %g %g %g %g %g\n",
-                                    sys.GetRunningTime(),
-                                    revPerRad * m.angleMotor,
-                                    revPmPerRadPs * m.omegaMotor,
-                                    revPerRad * m.angleLoad,
-                                    m0.getEngrgVelEst() * revPmPerRadPs,
-                                    m0.getRawAct(),
-                                    revPerRad * pPID.GetSetpoint(),
-                                    revPerRad * pPID.GetError());
-                        }
-                    }
-                    sys.IncrementRunningTime(dt);
-                }
-                if(realMotors)
-                {
-                    // Turn off actuation
-                    VisaIO.vioSetMotorActuation(motorChan, 0.0);
-                }                
-                break;
-            }
-
-            case TwoMotorCosine:
-            {
-                // Two identical bare motors
+                // Run one motor
 
                 // Units for this example:
                 // Engineering     Raw          Display
@@ -429,14 +253,14 @@ public class RealMotorSamples
                 {
                     timeKeeper = new TrjTimeSim(0.0);
                 }
-                
+
                 sys = new TrjSys(timeKeeper); // This sample uses simulated time
                 MultiMotor multi = new MultiMotor(sys, mtr, mSim, fb, prof,
                         realMotors);
 
                 dtVel = 0.01;
                 int motorChan = 7;  // Which channel to use for this motor
-                Motor m0 = new Motor(
+                Motor mm = new Motor(
                         0.0, // double r0 (initial raw position)
                         countsPerRev * revPerRad, // double engrgToRawPos
                         countsPerRev * revPerRad, // double engrgToRawVel
@@ -446,7 +270,7 @@ public class RealMotorSamples
                         motorChan, // int posChan
                         motorChan // int actChan
                         );
-                mtr.add(m0);
+                mtr.add(mm);
 
                 // Try to match the actual motor as well as possible
                 if(!realMotors)
@@ -493,7 +317,184 @@ public class RealMotorSamples
                         0.0, //double integ0,
                         true, //boolean triggerMode,
                         true, //boolean useAntiWindup
-                        m0 // Motor mot
+                        mm // Motor mot
+                        );
+
+                pPID.SetStateTracking(true);
+                fb.add(pPID);
+
+                // See below for the definition of this "inner" class
+                mProfCosine =new MotorCosineProfile(
+                        "MotorProfile", //String name,
+                        sys, //TrjSys sys,
+                        ProfileGenerator.PROFILE_RUN, //int initialState,
+                        true, //boolean taskActive,
+                        0.005, //0.001, //double dtNominal,
+                        1500.0 * radPsPerRevPM, //double dsdtCruise
+                        2.0e3 * radPsPerRevPM, //double accel,
+                        2.0e3 * radPsPerRevPM, //double decel
+                        pPID // SISOFeedback cntlr
+                        );
+
+                mProfCosine.setNewProfile(0.0, 50.5 * radPerRev);  // New profile -- s0, sE
+                mProfCosine.SetStateTracking(true);
+                prof.add(mProfCosine);
+
+                if(realMotors)dt = 2.0e-6;  // Calibrated time
+                else dt = 1.0e-5;  // For simulated time
+
+                tFinal = 4.0; //8.0; // Use the longer profile for an up and back move
+                dtLog = 2.0e-3;
+                tNextLog = 0.0;
+                // Create a data logging task
+                log = new DataLogger
+                        (
+                        "DataLog1", //String name,
+                        sys, //TrjSys sys,
+                        0, //int initialState, (no states in this task)
+                        true, //boolean taskActive,
+                        dtLog, //double dt,
+                        multi, //MultiMotor mm,
+                        0.0, //double ts,
+                        tFinal //double te
+                        );
+                tNextProfile = 4.0;
+                nextProfileSet = false;
+
+                if(realMotors)
+                {
+                    VisaIO.vioInit();
+                }
+
+                // Create a timing histogram
+                Histogram h = new Histogram(1, 15, 1.0e-6, 2.0);
+                double tPrev = 0.0;
+                boolean first = true;  // True during first run through loop
+
+                while(sys.GetRunningTime() <= tFinal)
+                {
+                    double tCur = sys.GetRunningTime();
+                    double dtLoop = tCur - tPrev;
+                    if(dtLoop > 0.008)
+                        System.out.println("t dtLoop " + tCur + " " + dtLoop);
+                    if(!first)h.HistValue(dtLoop);  // Ignore the first pass
+
+                    if((tCur > tNextProfile) && !nextProfileSet)
+                    {
+                        nextProfileSet = true;
+                        mProfCosine.setNewProfile(50.5 * radPerRev, 0.0 * radPerRev);
+                        mProfCosine.SetCommand(ProfileGenerator.START_PROFILE);
+                    }
+
+                    // Connect motor data to simulation or real motor
+                    multi.InterfaceMotors(tCur);
+
+                    if(sys.RunTasks())break; // Run all of the tasks
+                        // RunTasks() returns system stop status
+
+                    // Data logging has been replaced by a separate task
+                    sys.IncrementRunningTime(dt);
+                    first = false;
+                    tPrev = tCur;
+                }
+                multi.TurnOffMotors();
+                h.WriteHistogram(null);
+                break;
+            }
+
+            case TwoMotorCosine:
+            {
+                // Two identical bare motors
+
+                // Units for this example:
+                // Engineering     Raw          Display
+                //     Position, velocity
+                //   rad            counts       rev
+                //   rad/s          counts/s     rev/min (RPM)
+                //     Actuation
+                //   volts          duty cycle   duty cycle
+
+                double countsPerRev = 400.0;  // Encoder resolution
+                double pwmPerVolt = 0.1; // 10 volts converts to 1.0 duty cycle
+                realMotors = false;  // Set for operating mode
+                realTime = false;
+
+                TrjTime timeKeeper = null;
+
+                // Create a time object
+                if(realTime)
+                {
+                    timeKeeper = new TrjTimeReal();
+                }
+                else
+                {
+                    timeKeeper = new TrjTimeSim(0.0);
+                }
+                
+                sys = new TrjSys(timeKeeper); // This sample uses simulated time
+                MultiMotor multi = new MultiMotor(sys, mtr, mSim, fb, prof,
+                        realMotors);
+
+                dtVel = 0.01;
+                int motorChan = 7;  // Which channel to use for this motor
+                Motor mm = new Motor(
+                        0.0, // double r0 (initial raw position)
+                        countsPerRev * revPerRad, // double engrgToRawPos
+                        countsPerRev * revPerRad, // double engrgToRawVel
+                        0.0, // double actRaw0
+                        pwmPerVolt, // double engrgToRawAct
+                        dtVel, // double dtVel
+                        motorChan, // int posChan
+                        motorChan // int actChan
+                        );
+                mtr.add(mm);
+
+                // Try to match the actual motor as well as possible
+                if(!realMotors)
+                {
+                    // Only create the simulation object when running in
+                    // simulation mode
+                    m = new MotorSim(
+                            "Motor", //String name,
+                            sys, //TrjSys sys,
+                            2.0, //double v,  // applied voltage, volts
+                            2.23, //double r,  // coil resistance, ohms
+                            41.7e-7, //double rotorInertia,
+                                // kg-m^2 (gram-cm^2 in motor spec; 10^-7 conversion)
+                            0.0, //2.0e-2, //double rotorDamping,
+                                    // friction (damping) on motor, Nm/(rad/sec)
+                            24.2e-3, //double torqueK,  // motor torque constant, Nm/A
+                            (1.0/394.0)*(60.0/(2.0*Math.PI)), //double backEmfK,
+                                    // back EMF constant, V/(rad/sec)
+                            50.0e-7, //double loadInertia,  // kg-m^2
+                            0.5e3, //double shaftK,  // shaft rotary spring constant, Nm/rad
+                            1.e-1, //double shaftB;  // Damping of connection, Nm/(rad/sec)
+                            0.0, //5.0e-4, //double loadB,  // friction (damping) on load, Nm/(rad/sec)
+                            1.0, //double gearRatio  // unitless (gr > 1 means motor
+                                    //turns faster than load)
+                            true // boolean useAdaptiverSolver
+                            );
+                    mSim.add(m);
+                }
+
+                // Create a PID controller
+                // See below for the definition of this "inner" class
+                pPID = new PosPID(
+                        "PosControl", //String name,
+                        sys, //TrjSys sys,
+                        0.001, //double dt, sec
+                        -10.0, //double mMin, volts
+                        10.0, //double mMax,
+                        0.0, //double mOff,
+                        1, //int initialState, start with control on
+                        true, //boolean taskActive,
+                        3.0, //double kp,
+                        20.0, //double ki,
+                        0.03, //0.04, //double kd,
+                        0.0, //double integ0,
+                        true, //boolean triggerMode,
+                        true, //boolean useAntiWindup
+                        mm // Motor mot
                         );
 
                 pPID.SetStateTracking(true);
@@ -579,7 +580,7 @@ public class RealMotorSamples
             }
 
         }
-        dataFile0.close();  // Data file is opened for all samples so close it
+        //dataFile0.close();  // Data file is opened for all samples so close it
         log.WriteAllData("TestData.txt");
         try
         {
@@ -623,6 +624,14 @@ public class RealMotorSamples
                     taskActive, kp, ki, kd, integ0, triggerMode,
                     useAntiWindup);
             this.mot = mot;
+        }
+
+        public PosPID CreateClone(String newName)
+        {
+            PosPID p = new PosPID(newName, sys, dt, mMin, mMax, mOff,
+                    initialState, taskActive, kp, ki, kd, integ0, triggerMode,
+                    useAntiWindup, mot);
+            return p;
         }
 
         @Override
@@ -686,6 +695,14 @@ public class RealMotorSamples
             super(name,sys,initialState, taskActive, dtNominal, dsdtCruise,
                     accelMax, decelMax);
             this.cntlr = cntlr;
+        }
+
+        public MotorCosineProfile CreateClone(String newName)
+        {
+            MotorCosineProfile mcp = new MotorCosineProfile(newName, sys,
+                    initialState, taskActive, dtNominal, dsdtCruise,
+                    accelMax, decelMax, cntlr);
+            return mcp;
         }
 
         @Override

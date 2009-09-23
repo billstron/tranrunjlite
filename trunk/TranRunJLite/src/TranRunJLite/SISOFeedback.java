@@ -36,14 +36,14 @@ package TranRunJLite;
  */
 public abstract class SISOFeedback extends TrjTask {
 
-    double setpoint;
-    double m;  // Controller output, manipulated (actuation) variable
-    double mMin, mMax;  // Output limits
-    double mOff;  // Value of m to use when controller is in Off state
-    double y;  // Process variable
-    double err;  // error
-    boolean first;  // TRUE if this is the first pass
-    double dt;  // Sampling interval
+    protected double setpoint;
+    protected double m;  // Controller output, manipulated (actuation) variable
+    protected double mMin, mMax;  // Output limits
+    protected double mOff;  // Value of m to use when controller is in Off state
+    protected double y;  // Process variable
+    protected double err;  // error
+    protected boolean first;  // TRUE if this is the first pass
+    protected double dt;  // Sampling interval
 
     public abstract double FindProcessValue();  // Used locally to get the process value
 
