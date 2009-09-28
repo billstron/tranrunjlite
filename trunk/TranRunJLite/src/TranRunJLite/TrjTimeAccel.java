@@ -113,6 +113,21 @@ public class TrjTimeAccel implements TrjTime {
         // nothing to do
     }
 
+    /** Reset the running time to the current time.
+     *
+     */
+    public void resetRunningTime() {
+        String osName = System.getProperty("os.name");
+        if(osName.equalsIgnoreCase("Linux")){
+            this.nsStart = System.nanoTime();
+            this.msStart = System.currentTimeMillis();
+        } else{
+            this.nsStart = (long) (PerfTimer.GetPerfTime() * 1e9);
+            this.msStart = System.currentTimeMillis();
+        }
+    }
+
+    
     /** Test function
      *
      * @param args -- none!

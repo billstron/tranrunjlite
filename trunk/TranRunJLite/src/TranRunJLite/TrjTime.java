@@ -63,4 +63,8 @@ public interface TrjTime {
      * @param dt amount to increment the time by (s)
      */
     public void incrementRunningTime(double dt);
+
+    /** Reset the start times to the current time.  
+     */
+    public void resetRunningTime();
 }
