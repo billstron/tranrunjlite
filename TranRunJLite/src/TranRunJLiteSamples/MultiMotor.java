@@ -98,21 +98,26 @@ public class MultiMotor
         Motor m;
         int n = mtr.size();  // Number of motors
 
+        data[0] = t;
+        int j = 1;
         for(int i = 0; i < n; i++)
         {
             m = mtr.get(i);
-            int iMotor = n * i;
             // Connect motor data to simulation or real motor
-            data[0 + iMotor] = t;
-            data[1 + iMotor] = m.getEngrgPos();  // Motor position
-            data[2 + iMotor] = m.getEngrgVelMeas(); // Measured velocity
-            data[3 + iMotor] = m.getRawPos();
-            data[4 + iMotor] = m.getEngrgVelEst();
-            data[5 + iMotor] = m.getRawAct();
+            data[j++] = m.getEngrgPos();  // Motor position
+            data[j++] = m.getEngrgVelMeas(); // Measured velocity
+            data[j++] = m.getRawPos();
+            data[j++] = m.getEngrgVelEst();
+            data[j++] = m.getRawAct();
             if((fb.size() >= n) && (fb.get(i) != null))
             {
-                data[6 + iMotor] = fb.get(i).GetSetpoint();
-                data[7 + iMotor] = fb.get(i).GetError();
+                data[j++] = fb.get(i).GetSetpoint();
+                data[j++] = fb.get(i).GetError();
+            }
+            else
+            {
+                data[j++] = 0.0;
+                data[j++] = 0.0;
             }
         }        
     }
@@ -130,9 +135,11 @@ public class MultiMotor
             // Write a file
             f = OpenDataFile(fileName);
 
+            System.out.printf("<WriteAllData> data.length %d, data[0].length %d, n %d\n",
+                    data.length, data[0].length, n);
             for(int i = 0; i < nData; i++)
             {
-                for(int j = 0; j < (n * nCol); j++)
+                for(int j = 0; j < nCol; j++)
                 {
                     f.printf("%g ", data[i][j]);
                 }
