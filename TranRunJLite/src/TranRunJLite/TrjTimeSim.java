@@ -111,6 +111,15 @@ public class TrjTimeSim implements TrjTime {
         t += dt;
     }
 
+    /** Reset the running time to the current time.
+     *
+     */
+    public void resetRunningTime() {
+        this.nsStart = System.nanoTime();
+        this.msStart = System.currentTimeMillis();
+        this.t = t0;
+    }
+    
     /** Test function
      *
      * @param args -- none
