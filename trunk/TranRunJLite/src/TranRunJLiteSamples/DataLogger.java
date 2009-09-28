@@ -55,7 +55,7 @@ public class DataLogger extends TrjTask
         // Allocate space for data
         int nMotors = mm.NumberOfMotors();
         int nDataMax = (int)((te - ts) / dt) + 5;
-        data = new double[nDataMax + 2][nMotors * 8];
+        data = new double[nDataMax + 2][nMotors * 7 + 1];
         nData = 0;  // Number of data rows actually collected
     }
 
