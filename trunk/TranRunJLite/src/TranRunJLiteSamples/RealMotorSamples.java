@@ -31,7 +31,7 @@ package TranRunJLiteSamples;
 
 import TranRunJLite.*;
 import visaio.*;
-import java.io.FileWriter;
+//import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -80,7 +80,7 @@ public class RealMotorSamples
     public void RunSamples()
     {
         // Select the problem to be solved
-        Samples s = Samples.SingleMotorCosine;
+        Samples s = Samples.TwoMotorCosine;
         TrjSys sys;
         double dt = 0.0;  // Used for samples that need a time delta
         double tFinal = 0.0;
@@ -146,7 +146,8 @@ public class RealMotorSamples
                         pwmPerVolt, // double engrgToRawAct
                         dtVel, // double dtVel
                         motorChan, // int posChan
-                        motorChan // int actChan
+                        motorChan, // int actChan
+                        motorChan // int switchChan
                         );
                 mtr.add(m0);
                 double motorActuation = 8.0;  // Actuation step size, volts
@@ -204,7 +205,7 @@ public class RealMotorSamples
                 double tPrev = 0.0;
                 boolean first = true;  // True during first run through loop
 
-                System.out.println("Time1: " + sys.GetRunningTime());
+                timeKeeper.resetRunningTime();
                 while(sys.GetRunningTime() <= tFinal)
                 {
                     double tCur = sys.GetRunningTime();
@@ -269,7 +270,8 @@ public class RealMotorSamples
                         pwmPerVolt, // double engrgToRawAct
                         dtVel, // double dtVel
                         motorChan, // int posChan
-                        motorChan // int actChan
+                        motorChan, // int actChan
+                        motorChan // int switchChan
                         );
                 mtr.add(mm);
 
@@ -356,6 +358,7 @@ public class RealMotorSamples
                 double tPrev = 0.0;
                 boolean first = true;  // True during first run through loop
 
+                timeKeeper.resetRunningTime();
                 while(sys.GetRunningTime() <= tFinal)
                 {
                     double tCur = sys.GetRunningTime();
@@ -428,7 +431,8 @@ public class RealMotorSamples
                         pwmPerVolt, // double engrgToRawAct
                         dtVel, // double dtVel
                         motorChan, // int posChan
-                        motorChan // int actChan
+                        motorChan, // int actChan
+                        motorChan // int switchChan
                         );
                 mtr.add(mm);
 
@@ -472,7 +476,7 @@ public class RealMotorSamples
                         1, //int initialState, start with control on
                         true, //boolean taskActive,
                         4.0, //double kp,
-                        300.0, //double ki,
+                        0.0, //double ki,
                         0.03, //0.04, //double kd,
                         0.0, //double integ0,
                         true, //boolean triggerMode,
@@ -531,6 +535,7 @@ public class RealMotorSamples
                 double tPrev = 0.0;
                 boolean first = true;  // True during first run through loop
 
+                timeKeeper.resetRunningTime();
                 while(sys.GetRunningTime() <= tFinal)
                 {
                     double tCur = sys.GetRunningTime();
@@ -576,8 +581,8 @@ public class RealMotorSamples
 
                 double countsPerRev = 400.0;  // Encoder resolution
                 double pwmPerVolt = 0.1; // 10 volts converts to 1.0 duty cycle
-                realMotors = true;  // Set for operating mode
-                realTime = true;
+                realMotors = false;  // Set for operating mode
+                realTime = false;
 
                 TrjTime timeKeeper = null;
 
@@ -604,7 +609,8 @@ public class RealMotorSamples
                         pwmPerVolt, // double engrgToRawAct
                         dtVel, // double dtVel
                         6, // int posChan
-                        6 // int actChan
+                        6, // int actChan
+                        6 // int switchChan
                         );
                 mtr.add(mm);
 
@@ -623,19 +629,19 @@ public class RealMotorSamples
                     m = new MotorSim(
                             "Motor0", //String name,
                             sys, //TrjSys sys,
-                            2.0, //double v,  // applied voltage, volts
-                            2.23, //double r,  // coil resistance, ohms
-                            41.7e-7, //double rotorInertia,
+                            0.0, //double v,  // applied voltage, volts
+                            1.3*2.23, //double r,  // coil resistance, ohms
+                            20.0e-7, //double rotorInertia,
                                 // kg-m^2 (gram-cm^2 in motor spec; 10^-7 conversion)
                             0.0, //2.0e-2, //double rotorDamping,
                                     // friction (damping) on motor, Nm/(rad/sec)
-                            24.2e-3, //double torqueK,  // motor torque constant, Nm/A
-                            (1.0/394.0)*(60.0/(2.0*Math.PI)), //double backEmfK,
+                            0.9*24.2e-3, //double torqueK,  // motor torque constant, Nm/A
+                            0.9*(1.0/394.0)*(60.0/(2.0*Math.PI)), //double backEmfK,
                                     // back EMF constant, V/(rad/sec)
-                            50.0e-7, //double loadInertia,  // kg-m^2
+                            2.0e-7, //double loadInertia,  // kg-m^2
                             0.5e3, //double shaftK,  // shaft rotary spring constant, Nm/rad
                             1.e-1, //double shaftB;  // Damping of connection, Nm/(rad/sec)
-                            0.0, //5.0e-4, //double loadB,  // friction (damping) on load, Nm/(rad/sec)
+                            0.0, //double loadB,  // friction (damping) on load, Nm/(rad/sec)
                             1.0, //double gearRatio  // unitless (gr > 1 means motor
                                     //turns faster than load)
                             true // boolean useAdaptiverSolver
@@ -653,14 +659,14 @@ public class RealMotorSamples
                 pPID = new PosPID(
                         "PosControl-0", //String name,
                         sys, //TrjSys sys,
-                        0.001, //double dt, sec
+                        0.005, //double dt, sec
                         -10.0, //double mMin, volts
                         10.0, //double mMax,
                         0.0, //double mOff,
                         1, //int initialState, start with control on
                         true, //boolean taskActive,
-                        3.0, //double kp,
-                        20.0, //double ki,
+                        4.0, //double kp,
+                        0.0, //double ki,
                         0.03, //0.04, //double kd,
                         0.0, //double integ0,
                         true, //boolean triggerMode,
@@ -684,7 +690,7 @@ public class RealMotorSamples
                         sys, //TrjSys sys,
                         ProfileGenerator.PROFILE_RUN, //int initialState,
                         true, //boolean taskActive,
-                        0.001, //0.001, //double dtNominal,
+                        0.005, //0.001, //double dtNominal,
                         1500.0 * radPsPerRevPM, //double dsdtCruise
                         2.0e3 * radPsPerRevPM, //double accel,
                         2.0e3 * radPsPerRevPM, //double decel
@@ -697,7 +703,7 @@ public class RealMotorSamples
 
                 mProfCosine = mProfCosine.CreateClone("MotorProfile1");
                 mProfCosine.cntlr = fb.get(1); // Change for second motor
-                mProfCosine.setNewProfile(0.0, -50.5 * radPerRev);  // New profile -- s0, sE
+                mProfCosine.setNewProfile(0.0, -42.0 * radPerRev);  // New profile -- s0, sE
                 mProfCosine.SetStateTracking(true);
                 prof.add(mProfCosine);
 
@@ -732,6 +738,7 @@ public class RealMotorSamples
                 double tPrev = 0.0;
                 boolean first = true;  // True during first run through loop
 
+                timeKeeper.resetRunningTime();
                 while(sys.GetRunningTime() <= tFinal)
                 {
                     double tCur = sys.GetRunningTime();
@@ -759,7 +766,7 @@ public class RealMotorSamples
                     tPrev = tCur;
                 }
                 multi.TurnOffMotors();
-                h.WriteHistogram(null);
+                h.WriteHistogram("HistTwoMotorCosine.txt");
                 break;
             }
 

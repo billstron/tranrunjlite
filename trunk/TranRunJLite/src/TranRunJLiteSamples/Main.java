@@ -65,7 +65,7 @@ public class Main
     public void RunSamples()
     {
         // Select the problem to be solved
-        Samples s = Samples.CosineProfile;
+        Samples s = Samples.TrapezoidProfile;
         TrjSys sys;
         double dt = 0.0;  // Used for samples that need a time delta
         double tFinal = 0.0;
@@ -436,7 +436,7 @@ public class Main
                 ms = new MotorSim(
                         "Motor", //String name,
                         sys, //TrjSys sys,
-                        2.0, //double v,  // applied voltage, volts
+                        0.0, //double v,  // applied voltage, volts
                         2.23, //double r,  // coil resistance, ohms
                         41.7e-7, //double rotorInertia,
                             // kg-m^2 (gram-cm^2 in motor spec; 10^-7 conversion)

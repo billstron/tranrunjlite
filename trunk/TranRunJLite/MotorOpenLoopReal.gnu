@@ -1,8 +1,8 @@
 # Plot results of motor simulation using MotorSim
 
 set multiplot layout 2,1 # This feature requires gnuplot v4.2 or later
-#file = 'dataFile0.txt'
-file = 'dataFile0-real.txt'
+file = 'dataFile0.txt'
+#file = 'TestData-8vReal.txt'
 
 set lmargin 12
 set ylabel 'Motor Velocity (rpm)'

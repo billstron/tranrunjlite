@@ -2,6 +2,7 @@ unset mouse
 set multiplot layout 2,2 # This feature requires gnuplot v4.2 or later
 
 file = 'dataFile0.txt'
+#file = 'TestDataSingleCLosedLoopStepSim.txt'
 set xlabel 'Time (sec)'
 
 set lmargin 12
@@ -16,7 +17,7 @@ plot file using 1:3 title "Simulated Velocity, rpm" with lines,\
 set ylabel 'Position (rev)'
 set key bottom
 set lmargin 12
-plot file using 1:4 title "Position, rev" with lines,\
+plot file using 1:2 title "Position, rev" with lines,\
   file using 1:7 title "Setpoint, rev" with lines 
 
 set lmargin 12

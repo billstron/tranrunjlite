@@ -6,6 +6,8 @@ RevPerRad = 1/(2.0 * pi)
 RevPmPerRadPs = 60.0 * RevPerRad
 
 file = 'TestData.txt'
+#file = 'TestDataTwoMotorCosineReal.txt'
+
 set xlabel 'Time (sec)'
 
 

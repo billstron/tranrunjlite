@@ -8,6 +8,7 @@ RevPmPerRadPs = 60.0 * RevPerRad
 #file = 'TestData-8v.txt'
 file = 'TestData.txt'
 
+set xlabel 'Time, sec'
 set lmargin 12
 set ylabel 'Motor Velocity (rpm)'
 plot file using 1:($3 * RevPmPerRadPs) title "Measured Velocity, rpm" with lines,\

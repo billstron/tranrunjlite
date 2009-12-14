@@ -2,6 +2,7 @@ unset mouse
 set multiplot layout 2,2 # This feature requires gnuplot v4.2 or later
 
 file = 'dataFile0.txt'
+#file = 'TestDataSingleCLosedLoopStepReal.txt'
 set xlabel 'Time (sec)'
 
 set lmargin 12

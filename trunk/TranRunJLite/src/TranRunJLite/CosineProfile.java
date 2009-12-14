@@ -56,6 +56,7 @@ public abstract class CosineProfile extends ProfileGenerator
     protected double sign = 1.0;  // Direction of motion
     protected double dMove;  // Magnitude of distance to be moved
     protected double dAccel, dDecel, dCruise; // Magnitudes of distances
+    protected boolean nullProfile = false; // For the case where sE = s0
     final double pi = Math.PI;
 
     public CosineProfile(String name, TrjSys sys, int initialState,
@@ -71,8 +72,14 @@ public abstract class CosineProfile extends ProfileGenerator
 
     public void initProfile(double t)
     {
+        nullProfile = false;
         t0 = t;
         Vc = dsdtCruise;
+        if(sE == s0)
+        {
+            nullProfile = true;
+            return;
+        }
         dMove = Math.abs(sE - s0);
         Ta = (Vc / 2.0) * pi * Math.sin(pi / 2.0) / accelMax;
         Td = (Vc / 2.0) * pi * Math.sin(pi / 2.0) / decelMax;
@@ -107,7 +114,15 @@ public abstract class CosineProfile extends ProfileGenerator
     {
         double v, x, a;  // velocity, position, acceleration
         double tp = t - t0;
-        
+
+        if(nullProfile)
+        {
+            s = sE;
+            dsdt = 0.0;
+            sToSetpoint(t, sE);  // Send value out to the controller
+            profileDone = true;
+            return;
+        }
         if(t <= t1)
         {
             // Accel
