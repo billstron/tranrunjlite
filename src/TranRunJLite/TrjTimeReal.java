@@ -49,15 +49,15 @@ public class TrjTimeReal implements TrjTime {
      * 
      */
     public TrjTimeReal() {
-        String osName = System.getProperty("os.name");
-        if(osName.equalsIgnoreCase("Linux")){
-            this.nsStart = System.nanoTime();
-            this.msStart = System.currentTimeMillis();
-        } else{
-            PerfTimer.InitPerfTimer();
-            this.nsStart = (long) (PerfTimer.GetPerfTime() * 1e9);
-            this.msStart = System.currentTimeMillis();
-        }
+    	String osName = System.getProperty("os.name");
+		if (osName.indexOf("win") >= 0) {
+			PerfTimer.InitPerfTimer();
+			this.nsStart = (long) (PerfTimer.GetPerfTime() * 1e9);
+			this.msStart = System.currentTimeMillis();
+		} else {
+			this.nsStart = System.nanoTime();
+			this.msStart = System.currentTimeMillis();
+		}
     }
 
     /** Get the Gregorian Calendar for the current time.
@@ -89,11 +89,11 @@ public class TrjTimeReal implements TrjTime {
 
         String osName = System.getProperty("os.name");
 
-        if(osName.equalsIgnoreCase("Linux")){
-            nsCurrent = System.nanoTime();
-        } else{
-            nsCurrent = (long) (PerfTimer.GetPerfTime() * 1e9);
-        }
+		if (osName.indexOf("win") >= 0) {
+			nsCurrent = (long) (PerfTimer.GetPerfTime() * 1e9);
+		} else {
+			nsCurrent = System.nanoTime();
+		}
         return (double) (nsCurrent - nsStart) / 1e9;
     }
 
@@ -109,14 +109,14 @@ public class TrjTimeReal implements TrjTime {
      * 
      */
     public void resetRunningTime() {
-        String osName = System.getProperty("os.name");
-        if(osName.equalsIgnoreCase("Linux")){
-            this.nsStart = System.nanoTime();
-            this.msStart = System.currentTimeMillis();
-        } else{
-            this.nsStart = (long) (PerfTimer.GetPerfTime() * 1e9);
-            this.msStart = System.currentTimeMillis();
-        }
+    	String osName = System.getProperty("os.name");
+		if (osName.indexOf("win") >= 0) {
+			this.nsStart = (long) (PerfTimer.GetPerfTime() * 1e9);
+			this.msStart = System.currentTimeMillis();
+		} else {
+			this.nsStart = System.nanoTime();
+			this.msStart = System.currentTimeMillis();
+		}
     }
 
     
