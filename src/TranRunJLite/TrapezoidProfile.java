@@ -87,15 +87,25 @@ public abstract class TrapezoidProfile extends ProfileGenerator
 
         if(distCruise < (kc * dist))
         {
-            // Not enough of profile is during cruise-- reduce cruise velocity
-            distCruise = kc * dist;
-            double vCruise = Math.sqrt(2.0 * (dist - distCruise) *
-                    accel * decel / (accel + decel));
-            tCruise = distCruise / vCruise;
-            tAccel = vCruise / accel;
-            tDecel = vCruise / decel;
-            if(sE > s0)dsdtProf = vCruise;
-            else dsdtProf = -vCruise;
+            if(sE == s0)
+            {
+                // Zero-distance move
+                tAccel = 0.0;
+                tCruise = 0.0;
+                tDecel = 0.0;
+            }
+            else
+            {
+                // Not enough of profile is during cruise-- reduce cruise velocity
+                distCruise = kc * dist;
+                double vCruise = Math.sqrt(2.0 * (dist - distCruise) *
+                        accel * decel / (accel + decel));
+                tCruise = distCruise / vCruise;
+                tAccel = vCruise / accel;
+                tDecel = vCruise / decel;
+                if(sE > s0)dsdtProf = vCruise;
+                else dsdtProf = -vCruise;
+            }
         }
 
         t0 = t;

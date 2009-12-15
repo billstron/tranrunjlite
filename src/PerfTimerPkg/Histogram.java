@@ -137,8 +137,8 @@ public class Histogram
                         binEdgeVals[0], bins[0]);
                 for(int i = 1; i < (nBins - 1); i++)
                 {
-                    outFile.printf("%g   %g     %d\n", binEdgeVals[i], 
-                        binEdgeVals[i + 1], bins[i]);
+                    outFile.printf("%g   %g     %d\n", binEdgeVals[i - 1],
+                        binEdgeVals[i], bins[i]);
                 }
                 outFile.printf("%g   +infinity    %d\n", maxVal, nAbove);
                 outFile.printf("lowVal %g, avgVal %g, highVal %g \n", lowVal, avgVal, highVal);

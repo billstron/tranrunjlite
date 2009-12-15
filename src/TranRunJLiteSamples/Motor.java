@@ -22,19 +22,32 @@ public class Motor
     private double rawVelocityMeas; // Measured velocity
     private double rawActuation;  // As sent to the actuator
     private double engrgToRawAct; // Convert, eg, DA counts/volt
-    int actChan, posChan; // Channel numbers for actuation and position
+    private boolean [] switches;  // Homing, end-of-travel, etc.
+    private int nSwitches;
+
+    int actChan, posChan, switchChan; // Channel numbers for actuation,
+            // position and homing switch channels
 
     public Motor(double r0, double engrgToRawPos, double engrgToRawVel,
             double actRaw0, double engrgToRawAct, double dtVel,
-            int posChan, int actChan)
+            int posChan, int actChan, int switchChan)
     {
         MotorInit(r0, engrgToRawPos, engrgToRawVel, actRaw0, engrgToRawAct,
-                dtVel, posChan, actChan);
+                dtVel, posChan, actChan, switchChan, 0);  // Base case, no switches
+    }
+
+    // Alternate constructor with switches
+    public Motor(double r0, double engrgToRawPos, double engrgToRawVel,
+            double actRaw0, double engrgToRawAct, double dtVel,
+            int posChan, int actChan, int switchChan, int nSwitches)
+    {
+        MotorInit(r0, engrgToRawPos, engrgToRawVel, actRaw0, engrgToRawAct,
+                dtVel, posChan, actChan, switchChan, nSwitches);
     }
 
     public void MotorInit(double r0, double engrgToRawPos, double engrgToRawVel,
             double actRaw0, double engrgToRawAct, double dtVel,
-            int posChan, int actChan)
+            int posChan, int actChan, int switchChan, int nSwitches)
     {
         rawPosition = r0;
         this.engrgToRawPos = engrgToRawPos;
@@ -44,6 +57,13 @@ public class Motor
         this.dtVel = dtVel;
         this.posChan = posChan;
         this.actChan = actChan;
+        this.switchChan = switchChan;
+        this.nSwitches = nSwitches;
+        if(nSwitches > 0)
+            switches = new boolean[nSwitches];
+        else
+            switches = null;
+
         rawVelocityEst = 0.0;
         rawVelocityMeas = 0.0;
         prevRawPosition = rawPosition;
@@ -54,7 +74,7 @@ public class Motor
     {
         // Create a copy of this motor that has all of the same parameters
         Motor m = new Motor(rawPosition, engrgToRawPos, engrgToRawVel,
-                rawActuation, engrgToRawAct, dtVel, posChan, actChan);
+                rawActuation, engrgToRawAct, dtVel, posChan, actChan, switchChan);
         return m;
     }
 
@@ -143,4 +163,25 @@ public class Motor
         return rawActuation;
     }
 
+    public void setSwitch(int i, boolean v)
+    {
+        if(i >= nSwitches)
+        {
+            System.out.printf("<Motor.setSwitch> switch index out of bounds\n");
+            System.out.printf("i %d, nSwitches %d\n", i, nSwitches);
+            System.exit(1);
+        }
+        switches[i] = v;
+    }
+
+    public boolean getSwitch(int i)
+    {
+        if(i >= nSwitches)
+        {
+            System.out.printf("<Motor.getSwitch> switch index out of bounds\n");
+            System.out.printf("i %d, nSwitches %d\n", i, nSwitches);
+            System.exit(1);
+        }
+        return switches[i];
+    }
 }

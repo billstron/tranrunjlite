@@ -181,6 +181,22 @@ public abstract class TrjTask {
         return rv;
     }
 
+    public void ActivateTask()
+    {
+        taskActive = true;
+    }
+
+    public void DeactivateTask()
+    {
+        taskActive = false;
+    }
+
+    public boolean GetActiveStatus()
+    {
+        return taskActive;
+    }
+
+    
     /** Each task defines its own version of RunTask
      * This method is abstract
      * @param sys The TrjSys of which this task is a part
