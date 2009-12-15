@@ -80,6 +80,7 @@ public abstract class SISOFeedback extends TrjTask {
         if (triggerMode) {
             useNominalDT = false;  // Use actual dt for control calcs
         }
+        setpoint = 0.0;
     }
 
     /** Get the value of the process value that the controller is using
