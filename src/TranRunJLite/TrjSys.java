@@ -117,7 +117,7 @@ public class TrjSys {
      * @param t
      * @return
      */
-    public GregorianCalendar GetClaendar(double t) {
+    public GregorianCalendar GetCalendar(double t) {
         return tm.getCalendar(t);
     }
 
