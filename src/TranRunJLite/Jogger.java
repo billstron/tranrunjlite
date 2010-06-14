@@ -43,7 +43,9 @@ public abstract class Jogger extends TrjTask
     double velJog;  // Jogging velocity
     boolean atMotionLimit;
     boolean eventFlag;
-    boolean stopOnEvent;
+    protected boolean stopOnEvent;
+    protected double tEvent = -1.0;  // Time at which an event occurred
+    protected double posEvent = 0.0;  // Location at which event occurred
 
     public Jogger(String name, TrjSys sys,
             boolean taskActive, double dtNominal, double s0, double sNeg,
@@ -72,6 +74,7 @@ public abstract class Jogger extends TrjTask
         atMotionLimit = false;
         eventFlag = false;
         stopOnEvent = this.stopOnEvent;
+        tEvent = -1.0;  // Default value -- no event has occurred
     }
 
     public boolean RunTaskNow(TrjSys sys)
@@ -92,22 +95,24 @@ public abstract class Jogger extends TrjTask
         if(((velJog < 0.0) && (sNew >= sNeg)) ||
                 ((velJog >= 0.0) && (sNew <= sPos)))
         {
-            // OK, update position (otherwise, do nothing)
-            s = sNew;
             atMotionLimit = false;
         }
         else atMotionLimit = true;
 
-        if(!(stopOnEvent && eventFlag))
+        // Check for conditions for which it is OK to keep the profile moving
+        // Otherwise, do nothing
+        if(!(stopOnEvent && eventFlag) && !atMotionLimit)
         {
            s = sNew;  // OK to update
         }
 
         // Check for event
-        if(eventCheck(t, s))
+        if(EventCheck(t, s) && !eventFlag)
         {
             eventFlag = true;  // Once set, this can only
                 // be cleared by a call to ClearEventFlag()
+            tEvent = t;
+            posEvent = s;
         }
 
         sToSetpoint(t, s);  // Send out the new setpoint
@@ -123,11 +128,22 @@ public abstract class Jogger extends TrjTask
     {
         eventFlag = false;
         velJog = 0.0;  // To avoid unexpected motion
+        tEvent = -1.0;
     }
 
     public boolean GetEventFlag()
     {
         return eventFlag;
+    }
+    
+    public double GetEventTime()
+    {
+    	return tEvent;
+    }
+    
+    public double GetEventLocation()
+    {
+    	return posEvent;
     }
     
     public boolean GetMotionLimitFlag()
@@ -148,7 +164,7 @@ public abstract class Jogger extends TrjTask
      * @param s Current position
      * @return true if the event has been detected
      */
-    public boolean eventCheck(double t, double s)
+    public boolean EventCheck(double t, double s)
     {
         return false;  // Dummy, always returns false
     }

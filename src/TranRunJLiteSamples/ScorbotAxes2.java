@@ -133,7 +133,6 @@ public class ScorbotAxes2
 
     public void WriteAllData(String fileName, double [][] data, int nData)
     {
-        Motor m;
         PrintWriter f;
 
         int n = mtr.size();  // Number of motors
@@ -196,7 +195,9 @@ public class ScorbotAxes2
                         encoderSign[i] * VisaIO.vioGetMotorPosition(m.posChan, 1.0);
                 boolean sw = (VisaIO.vioGetFlag(m.switchChan) != 0) ? true : false;
                 m.setSwitch(0, sw);
-                actuation[i] = actuationSign[i] * m.getRawAct();
+                //actuation[i] = actuationSign[i] * m.getRawAct();
+                actuation[i] = actuationSign[i] * motionSenseSign[i] 
+                       * m.getRawAct();
             }
 
             // Check the coupled actuation axes for overflow due to
@@ -234,7 +235,8 @@ public class ScorbotAxes2
                     //VisaIO.vioSetMotorActuation(m.actChan, actuation[i]);
                 }
                 m.setRawPos(motionSenseSign[i] * enc, tCur);
-                VisaIO.vioSetMotorActuation(m.actChan, motionSenseSign[i] * act);
+                //VisaIO.vioSetMotorActuation(m.actChan, motionSenseSign[i] * act);
+                VisaIO.vioSetMotorActuation(m.actChan, act);
             }
         }
         else  // Simulation

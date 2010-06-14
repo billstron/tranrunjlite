@@ -61,16 +61,19 @@ public abstract class ProfileGenerator extends TrjTask
         stateNames.add("PROFILE_OFF");
         stateNames.add("PROFILE_RUN");
         stateNames.add("PROFILE_HOLD");
+        stateNames.add("PROFILE_START");
     }
 
     // States
     public static final int PROFILE_OFF = 0;
     public static final int PROFILE_RUN = 1;
     public static final int PROFILE_HOLD = 2;
+    public static final int PROFILE_START = 3;
 
     // Commands
     public static final int START_PROFILE = 0;
-    public static final int STOP_PROFILE = 1;
+    public static final int HOLD_PROFILE = 1;
+    public static final int TURN_PROFILE_OFF = 2;
 
     public boolean RunTaskNow(TrjSys sys)
     {
@@ -85,14 +88,45 @@ public abstract class ProfileGenerator extends TrjTask
 
         switch(currentState)
         {
+        	case PROFILE_START:  // The best initial state when more than one profiler
+        			// will be used
+        		// Nothing to do, just wait for a command
+                cmd = GetCommand();
+                if(cmd == -1)break;  // Stay in this state
+                switch(cmd)
+                {
+                	case START_PROFILE:
+                		nextState = PROFILE_RUN;  // Start a profile
+                		break;
+                		
+                	case HOLD_PROFILE:
+                		nextState = PROFILE_HOLD;
+                		break;
+                		
+                	case TURN_PROFILE_OFF:
+                		nextState = PROFILE_OFF;
+                		break;
+                }
+                break;        		
+        		
             case PROFILE_OFF:
-                // Nothing to do
+                if(runEntry)
+                {
+                	// Turn off trigger mode in the associated controller
+                	SetControllerTriggerMode(false);
+                }
                 // Transitions - check for command
                 cmd = GetCommand();
                 if(cmd == -1)break;  // Stay in this state
-                else if(cmd == START_PROFILE)
+                switch(cmd)
                 {
-                    nextState = PROFILE_RUN;  // Start a profile
+                	case START_PROFILE:
+                		nextState = PROFILE_RUN;  // Start a profile
+                		break;
+                		
+                	case HOLD_PROFILE:
+                		nextState = PROFILE_HOLD;
+                		break;
                 }
                 break;
 
@@ -100,8 +134,11 @@ public abstract class ProfileGenerator extends TrjTask
                 if(runEntry)
                 {
                     // Initial activities for this state
+                	// Turn on trigger mode in the associated controller
+                	SetControllerTriggerMode(true);
                     // Copy new values to working values
-                    s0 = s0new;
+                    s0 = GetControllerSetpoint();  // Use the present controller 
+                    	// setpoint as the start of this profile
                     sE = sEnew;
                     dsdt0 = dsdt0new;
                     dsdtE = dsdtEnew;
@@ -113,7 +150,17 @@ public abstract class ProfileGenerator extends TrjTask
 
                 // Transition - check for profile done or for command
                 cmd = GetCommand();
-                // Ignore commands for the moment
+                switch(cmd)
+                {
+                	case HOLD_PROFILE:
+                		nextState = PROFILE_HOLD;
+                		break;
+                		
+                	case TURN_PROFILE_OFF:
+                		nextState = PROFILE_OFF;
+                		break;
+                }
+
                 if(profileDone)
                 {
                     sHold = sE;  // Profile outputs during hold state
@@ -123,7 +170,11 @@ public abstract class ProfileGenerator extends TrjTask
                 break;
 
             case PROFILE_HOLD:
-                // No entry section
+                if(runEntry)
+                {
+                	s = GetControllerSetpoint(); // Make sure position matches controller
+                			// for bumpless transfer
+                }
                 // Action - keep sending out final profile values
                 // If dsdtHold is not zero, sHold will get integrated and
                 // will not be constant during the hold state (profiles
@@ -132,8 +183,17 @@ public abstract class ProfileGenerator extends TrjTask
 
                 // Transitions
                 cmd = GetCommand();
-                if(cmd == START_PROFILE)nextState = PROFILE_RUN;
-                        // Start a new profile
+                if(cmd == -1)break;  // Stay in this state
+                switch(cmd)
+                {
+                	case START_PROFILE:
+                		nextState = PROFILE_RUN;  // Start a profile
+                		break;
+                		
+                	case TURN_PROFILE_OFF:
+                		nextState = PROFILE_OFF;
+                		break;
+                }
                 break;
                 
                 default:
@@ -150,6 +210,13 @@ public abstract class ProfileGenerator extends TrjTask
         setNewProfile(s0, sE, 0.0, 0.0);
     }
 
+    // This is the preferred entry -- the ProfileRun initialization will
+    // get s0 from the controller
+    public void setNewProfile(double sE)
+    {
+        setNewProfile(0.0, sE, 0.0, 0.0);
+    }
+    
     public void setNewProfile(double s0, double sE,
             double dsdt0, double dsdtE)
     {
@@ -159,7 +226,35 @@ public abstract class ProfileGenerator extends TrjTask
         this.dsdtEnew = dsdtE;
     }
 
+    public boolean GetDoneFlag()
+    {
+    	return profileDone;
+    }
+    
+    public void ClearProfileDoneFlag()
+    {
+    	if(currentState == PROFILE_RUN)
+    	{
+    		// This command is not legal if a profile is still underway
+    		System.out.printf("<task:%s, ClearProfileDoneFlag()> Attampt to clear DONE flag\n");
+    		System.out.printf("while profile is running. Program will Exit\n");
+    		System.exit(1);
+    	}
+    	profileDone = false;
+    }
     public abstract void initProfile(double t);
     public abstract void updateProfile(double t);
     public abstract void holdProfile(double t);
+    
+    /** This abstract method allows the profiler to turn trigger mode
+     * in the controller on or off (if applicable).
+     * @param triggerMode Trigger mode value
+     */
+    public abstract void SetControllerTriggerMode(boolean triggerMode);
+ 
+    /** This abstract method gets the current setpoint from the associated
+     * controller
+     * @return The current setpoint
+     */
+    public abstract double GetControllerSetpoint();
 }

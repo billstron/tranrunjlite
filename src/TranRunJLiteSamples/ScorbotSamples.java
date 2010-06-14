@@ -712,8 +712,10 @@ public class ScorbotSamples
 
     public class MotorBoxProfile extends BoxProfile
     {
-        public MotorBoxProfile(String name, TrjSys sys, int initialState,
-            boolean taskActive, double dtNominal, double dsdtBox)
+    	SISOFeedback cntlr = null;
+
+    	public MotorBoxProfile(String name, TrjSys sys, int initialState,
+            boolean taskActive, double dtNominal, double dsdtBox, SISOFeedback cntlr)
         {
             super(name,sys,initialState, taskActive, dtNominal, dsdtBox);
         }
@@ -721,26 +723,53 @@ public class ScorbotSamples
         @Override
         public void sToSetpoint(double t, double s)
         {
-            pPID.SetSetpoint(s);
-            pPID.SetTrigger(true);
+        	cntlr.SetSetpoint(s);
+            cntlr.SetTrigger(true);
+        }
+        
+        @Override
+        public void SetControllerTriggerMode(boolean m)
+        {
+        	cntlr.SetTriggerMode(m);
+        }
+        
+        @Override
+        public double GetControllerSetpoint()
+        {
+        	return cntlr.GetSetpoint();
         }
     }
 
     public class MotorTrapezoidProfile extends TrapezoidProfile
     {
+    	SISOFeedback cntlr = null;
+    	
         public MotorTrapezoidProfile(String name, TrjSys sys, int initialState,
             boolean taskActive, double dtNominal, double dsdtCruise,
-            double accel, double decel)
+            double accel, double decel, SISOFeedback cntlr)
         {
             super(name,sys,initialState, taskActive, dtNominal, dsdtCruise,
                     accel, decel);
+            this.cntlr = cntlr;
         }
 
         @Override
         public void sToSetpoint(double t, double s)
         {
-            pPID.SetSetpoint(s);
-            pPID.SetTrigger(true);
+        	cntlr.SetSetpoint(s);
+            cntlr.SetTrigger(true);
+        }
+        
+        @Override
+        public void SetControllerTriggerMode(boolean m)
+        {
+        	cntlr.SetTriggerMode(m);
+        }
+        
+        @Override
+        public double GetControllerSetpoint()
+        {
+        	return cntlr.GetSetpoint();
         }
     }
 
@@ -770,8 +799,18 @@ public class ScorbotSamples
         {
             cntlr.SetSetpoint(s);
             cntlr.SetTrigger(true);
-            //pPID.SetSetpoint(s);
-            //pPID.SetTrigger(true);
+        }
+        
+        @Override
+        public void SetControllerTriggerMode(boolean m)
+        {
+        	cntlr.SetTriggerMode(m);
+        }
+        
+        @Override
+        public double GetControllerSetpoint()
+        {
+        	return cntlr.GetSetpoint();
         }
     }
 }

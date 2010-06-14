@@ -31,19 +31,21 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package TranRunJLiteSamples;
 
 import TranRunJLite.*;
+
 import java.util.ArrayList;
 import lvcommpkg.*;
 
 /** This Class/Task connects the robot jog operations to
- * a LabVIEW GUI
+ * a LabVIEW GUI and will perform a homing operation on command.
  * This task must not run any faster than the LabVIEW GUI loop -- otherwise
  * VERY jerky motion will result!
  * @author DMAuslander, Dec. 4, 2009
  */
-public class JogOpInt extends TrjTask
+public class HomeOpInt extends TrjTask
 {
-    protected ArrayList<Jogger> joggerList;
+    protected ArrayList<NewJog> joggerList;
     protected ArrayList<Motor> motorList;
+    protected Homing homing = null; // The task that does actual homing
 
     // Arrays used for communication with LV
     protected double [] jogV = new double[6];
@@ -60,7 +62,7 @@ public class JogOpInt extends TrjTask
     protected int lv1ReadyReader = 0;
     protected int JogVelocityReader = 0;
     protected int RunMotorsRevReader = 0;
-    //protected int SetHomeReader = 0;
+    protected int StartHomingReader = 0;
 
     // Variables that write to the LV library:
     protected int trj1ReadyWriter = 0;
@@ -75,29 +77,36 @@ public class JogOpInt extends TrjTask
     public static final int Init2 = 1;
     public static final int Jog = 2;
     public static final int Off = 3;
-
+    public static final int Homing1 = 4;
+    public static final int Homing2 = 5;
+    public static final int homingCleanup = 6;
+    
     // Commands
     public static final int Stop_Jogging = 0;
 
     protected double tNetDelay = 1.0;  // Delay to allow for network activity
     protected double t0 = 0.0;  // Used for timing inside states
 
-    JogOpInt(String name, TrjSys sys, int initialState,
+    HomeOpInt(String name, TrjSys sys, int initialState,
             boolean taskActive, double dtNominal, 
-            ArrayList<Jogger> joggerList, ArrayList<Motor> motorList)
+            ArrayList<NewJog> joggerList, ArrayList<Motor> motorList, Homing homing)
     {
         super(name, sys, initialState, taskActive);
         this.dtNominal = dtNominal;
         this.joggerList = joggerList;
         this.motorList = motorList;
+        this.homing = homing;
         stateNames.add("Init1");
         stateNames.add("Init2");
         stateNames.add("Jog");
         stateNames.add("Off");
+        stateNames.add("Homing1");
+        stateNames.add("Homing2");
+        stateNames.add("homingCleanup");
 
         // Make sure all the jog tasks are activated and set initial
         // jog velocity to zero (to avoid unexpected motion)
-        for(Jogger jj : joggerList)
+        for(NewJog jj : joggerList)
         {
             jj.SetVelJog(0.0);
             jj.ActivateTask();
@@ -156,13 +165,24 @@ public class JogOpInt extends TrjTask
                     lv1ReadyReader = LVComm.NViCreateReader(hostIP, "lv1Ready");
                     JogVelocityReader = LVComm.NViCreateReader(hostIP, "JogVelocity");
                     RunMotorsRevReader = LVComm.NViCreateReader(hostIP, "RunMotorsRev");
-                    //SetHomeReader = LVComm.NViCreateReader(hostIP, "SetHome");
+                    StartHomingReader = LVComm.NViCreateReader(hostIP, "StartHoming");
 
                     trj1ReadyWriter = LVComm.NViCreateWriter(hostIP, "trj1Ready");
                     trj1TimeWriter = LVComm.NViCreateWriter(hostIP, "trj1Time");
                     MotorPositionsWriter = LVComm.NViCreateWriter(hostIP, "MotorPositions");
                     MotorVelocitiesWriter = LVComm.NViCreateWriter(hostIP, "MotorVelocities");
                     FlagsWriter = LVComm.NViCreateWriter(hostIP, "Flags");
+                    
+                    // Setup the jogging tasks
+        			for(int i = 0; i < 6; i++)
+        			{
+        				NewJog jj = joggerList.get(i);
+        				// Set parameters for basic jogging only -- no event detection
+        	            jj.SetEventParameters(false, false,
+        	            		0.0, EventType.None, 0.0);  // Start with 0 velocity
+        	            jj.SetCommand(NewJog.START_JOGGING);
+        	            jj.ActivateTask(); // Make sure task is active 
+        			}
 
                     t0 = t;  // Setup to time the wait
                 }
@@ -182,7 +202,7 @@ public class JogOpInt extends TrjTask
                     LVComm.NViFlushBufferBool(stopReader, 5.0);
                     LVComm.NViFlushBufferBool(lv1ReadyReader, 5.0);
                     LVComm.NViFlushBufferBool(RunMotorsRevReader, 5.0);
-                    //LVComm.NViFlushBufferBool(SetHomeReader, 5.0);
+                    LVComm.NViFlushBufferBool(StartHomingReader, 5.0);
                 }
 
                 // Send READY signal to LabVIEW
@@ -198,8 +218,6 @@ public class JogOpInt extends TrjTask
             case Jog:  // Read jogging commands from GUI and update GUI
             {
                 LVComm.NViSetDebugPrint(0);  // Turn debugging printing on or off
-                // Update time on the LV GUI
-                LVComm.NViSendDouble(trj1TimeWriter, t);
 
                 // Get the user input jog velocities from LV
                 // Check for 'forward' or 'backward' signals
@@ -210,8 +228,7 @@ public class JogOpInt extends TrjTask
                 LVComm.NViGetBoolIfAvailable(RunMotorsRevReader, runBack);
                 boolean fwd = (runFwd[0] != 0) ? true:false;
                 boolean back = (runBack[0] != 0) ? true:false;
-                //System.out.printf("runFwd %d fwd %b runBack %d back %b\n",
-                //        runFwd[0], fwd, runBack[0], back);
+                
                 if(fwd || back)
                 {
                     // Run the motors
@@ -228,7 +245,7 @@ public class JogOpInt extends TrjTask
                 {
                     // For safety, set the jog velocity to zero if there is
                     // no new fwd/back information. However, doing this means
-                    // that this task must runno faster than the LV GUI loop so
+                    // that this task must run no faster than the LV GUI loop so
                     // that the motion is not jerky from all of the zeros.
                     for(int i = 0; i < 6; i++)
                     {
@@ -236,17 +253,8 @@ public class JogOpInt extends TrjTask
                     }
                 }
 
-                // Send system information to the GUI
-                for(int i = 0; i < 6; i++)
-                {
-                    pos[i] = motorList.get(i).getEngrgPos();
-                    vel[i] = motorList.get(i).getEngrgVelEst();
-                    switches[i] = (motorList.get(i).getSwitch(0)) ? 1 : 0;
-                }
-                LVComm.NViSendDoubleArray(MotorPositionsWriter, pos);
-                LVComm.NViSendDoubleArray(MotorVelocitiesWriter, vel);
-                LVComm.NViSendIntArray(FlagsWriter, switches);
-
+                UpdateGUIData(t); // Update the information on the GUI screen
+                
                 // Check for STOP signal from GUI
                 int [] stopSig = {0};
                 if(LVComm.NViGetBoolIfAvailable(stopReader, stopSig) != 0)
@@ -255,9 +263,81 @@ public class JogOpInt extends TrjTask
                     LVComm.NViSendBool(trj1ReadyWriter, 0);  // Clear READY signal
                             // so LV program will stop also.
                 }
+                
+                // Check for START HOMING signal from GUI
+                int [] startHoming = {0};
+                if(LVComm.NViGetBoolIfAvailable(StartHomingReader, startHoming) != 0)
+                {
+                	//System.out.printf("<check for startHoming> startHoming[0]%d\n", startHoming[0]);
+                    if(startHoming[0] != 0)nextState = Homing1;
+                }
+                
                 break;
-            }  // Endof Jog state
+            }  // End of Jog state
 
+            case Homing1:
+            {
+            	// Turn off the jogger tasks so homing can use them
+        		if(runEntry)
+        		{
+        			for(NewJog jg : joggerList)
+        				jg.SetCommand(NewJog.STOP_JOGGING);
+        		}
+        		
+        		// Check to see that all jogger tasks are in the OFF state
+        		boolean joggersOff = true;
+        		for(NewJog jg : joggerList)
+        			if(jg.GetState() != Jogger2.OFF)joggersOff = false;
+        		if(joggersOff)nextState = Homing2;
+        		break;            	
+            }
+            	            	
+            case Homing2:
+            {
+            	if(runEntry)
+            	{
+            		homing.SetCommand(Homing.startHoming); // Get the homing started
+            	}
+            	
+            	UpdateGUIData(t); // Update the information on the GUI screen
+            	// Wait for homing to finish
+            	if(homing.GetHomingDone())
+            	{
+            		nextState = homingCleanup;
+            	}
+            	break;
+            }
+ 
+            case homingCleanup:
+            {
+            	// Turn off the jog tasks -- they will be re-setup to go back
+            	// to straight jogging mode
+        		if(runEntry)
+        		{
+        			for(NewJog jg : joggerList)
+        				jg.SetCommand(NewJog.STOP_JOGGING);
+        		}
+        		// Check to see that all jogger tasks are in the OFF state
+        		boolean joggersOff = true;
+        		for(NewJog jg : joggerList)
+        			if(jg.GetState() != Jogger2.OFF)joggersOff = false;
+        		if(joggersOff)
+        		{
+                    // Setup the jogging tasks for just jogging
+        			for(int i = 0; i < 6; i++)
+        			{
+        				NewJog jj = joggerList.get(i);
+        				// Set parameters for basic jogging only -- no event detection
+        	            jj.SetEventParameters(false, false,
+        	            		0.0, EventType.None, 0.0);  // Start with 0 velocity
+        	            jj.SetCommand(NewJog.START_JOGGING);
+        	            jj.ActivateTask(); // Make sure task is active 
+        			}
+        			nextState = Jog;
+        		}
+        		break;
+            }
+            
             case Off:
             {
                 if(runEntry)
@@ -267,9 +347,26 @@ public class JogOpInt extends TrjTask
 
                 // Delay to allow for network activity, then set STOP
                 if(t >= (t0 + tNetDelay))stop = true;
+                break;
             }  // End of Off state
         }
         return false;  // Done for now
     }
 
+    private void UpdateGUIData(double t)
+    {
+        // Send system information to the GUI
+        // Update time on the LV GUI
+        LVComm.NViSendDouble(trj1TimeWriter, t);
+        
+        for(int i = 0; i < 6; i++)
+        {
+            pos[i] = motorList.get(i).getEngrgPos();
+            vel[i] = motorList.get(i).getEngrgVelEst();
+            switches[i] = (motorList.get(i).getSwitch(0)) ? 1 : 0;
+        }
+        LVComm.NViSendDoubleArray(MotorPositionsWriter, pos);
+        LVComm.NViSendDoubleArray(MotorVelocitiesWriter, vel);
+        LVComm.NViSendIntArray(FlagsWriter, switches);    	
+    }
 }
