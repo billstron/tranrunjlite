@@ -30,12 +30,12 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package TranRunJLiteSamples;
 
 import TranRunJLite.*;
+import TranRunJLite.PerfTimer.*;
 import visaio.*;
 //import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import PerfTimerPkg.*;
 
 /** TranRunJLite Real Motor Samples
  * @author DMAuslander, Aug. 24, 2009
