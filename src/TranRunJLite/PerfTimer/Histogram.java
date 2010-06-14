@@ -7,7 +7,7 @@
  * and open the template in the editor.
  */
 
-package PerfTimerPkg;
+package TranRunJLite.PerfTimer;
 
 import java.io.*; 
 
@@ -156,23 +156,24 @@ public class Histogram
         Histogram h = new Histogram(1, 15, 1.0e-6, 2.0);
 
         // decide on the OS
-        boolean linux = false;
-        String osName = System.getProperty("os.name");
-        if(osName.equalsIgnoreCase("Linux")){
-            linux = true;
+        boolean windows = false;
+        String osName = System.getProperty("os.name").toLowerCase();
+        if(osName.contains("win")){
+            windows = true;
             
         } 
         
         // initialize the timer
         double t0 = 0;
-        if(linux)
+        if(windows)
         {
-            t0 = (double) ((double)System.nanoTime() / 1e9);
+        	PerfTimer.InitPerfTimer();
+            t0 = PerfTimer.GetPerfTime();
+            
         }
         else
         {
-            PerfTimer.InitPerfTimer();
-            t0 = PerfTimer.GetPerfTime();
+        	t0 = (double) ((double)System.nanoTime() / 1e9);
         }
         double t = 0;
         double tf = 5.0;
@@ -185,13 +186,13 @@ public class Histogram
 
         while(t <= tf)
         {
-            if(linux)
+            if(windows)
             {
-                t = (double) ((double)System.nanoTime() / 1e9) - t0;
+            	t = PerfTimer.GetPerfTime();
             }
             else
             {
-                t = PerfTimer.GetPerfTime();
+            	t = (double) ((double)System.nanoTime() / 1e9) - t0;
             }
             nLoops++;
             double dt = t - tLast;

@@ -30,13 +30,13 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package TranRunJLiteSamples;
 
 import TranRunJLite.*;
+import TranRunJLite.PerfTimer.*;
 import TranRunJLiteSamples.ScorbotSamples.MotorCosineProfile;
 import visaio.*;
 //import java.io.FileWriter;
 import java.io.IOException;
 //import java.io.PrintWriter;
 import java.util.ArrayList;
-import PerfTimerPkg.*;
 
 /** TranRunJLite Scorbot Samples
  * @author DMAuslander, Sept 29, 2009

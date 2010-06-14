@@ -36,7 +36,7 @@ import java.io.PrintWriter;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-import PerfTimerPkg.PerfTimer;
+import TranRunJLite.PerfTimer.PerfTimer;
 
 /**A time class for TranRunJLite that operates in real time.  
  *
