@@ -746,6 +746,18 @@ public class Main
             pPID.SetSetpoint(s);
             pPID.SetTrigger(true);
         }
+        
+        @Override
+        public void SetControllerTriggerMode(boolean m)
+        {
+        	pPID.SetTriggerMode(m);
+        }
+        
+        @Override
+        public double GetControllerSetpoint()
+        {
+        	return pPID.GetSetpoint();
+        }        
     }
 
     public class MotorTrapezoidProfile extends TrapezoidProfile
@@ -763,6 +775,18 @@ public class Main
         {
             pPID.SetSetpoint(s);
             pPID.SetTrigger(true);
+        }
+        
+        @Override
+        public void SetControllerTriggerMode(boolean m)
+        {
+        	pPID.SetTriggerMode(m);
+        }
+        
+        @Override
+        public double GetControllerSetpoint()
+        {
+        	return pPID.GetSetpoint();
         }
     }
 
@@ -782,5 +806,17 @@ public class Main
             pPID.SetSetpoint(s);
             pPID.SetTrigger(true);
         }
+        
+        @Override
+        public void SetControllerTriggerMode(boolean m)
+        {
+        	pPID.SetTriggerMode(m);
+        }
+        
+        @Override
+        public double GetControllerSetpoint()
+        {
+        	return pPID.GetSetpoint();
+        }        
     }
 }

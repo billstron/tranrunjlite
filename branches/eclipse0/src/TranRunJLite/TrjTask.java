@@ -128,7 +128,20 @@ public abstract class TrjTask {
         command = -1;
         return cmd;
     }
+    
+    public String GetName()
+    {
+    	return name;
+    }
 
+    /** Get the current state of this task
+     * @return Current state
+     */
+    public int GetState()
+    {
+    	return currentState;
+    }
+    
     /** Set the tracking state for this task. When state tracking is on
      * all state transitions will be recorded.
      * @param st Turn state tracking on (true) or off (false)

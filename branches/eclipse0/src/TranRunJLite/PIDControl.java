@@ -87,8 +87,8 @@ public abstract class PIDControl extends SISOFeedback
     }
 
     // States
-    final int PID_OFF = 0;
-    final int PID_ON = 1;
+    public static final int PID_OFF = 0;
+    public static final int PID_ON = 1;
 
     /** Check to see if this task is ready to run
      * @param sys The system in which this task is embedded

@@ -149,7 +149,7 @@ public class TrjSys {
                 // update the states.
                 tsk.UpdateState();
                 runTask = tsk.RunTask(this);
-                // stop imedieatly if indicated.
+                // stop immediately if indicated.
                 if (stop) {
                     return stop;
                 }

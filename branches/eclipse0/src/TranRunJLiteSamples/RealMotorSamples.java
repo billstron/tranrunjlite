@@ -858,6 +858,18 @@ public class RealMotorSamples
             pPID.SetSetpoint(s);
             pPID.SetTrigger(true);
         }
+        
+        @Override
+        public void SetControllerTriggerMode(boolean m)
+        {
+        	pPID.SetTriggerMode(m);
+        }
+        
+        @Override
+        public double GetControllerSetpoint()
+        {
+        	return pPID.GetSetpoint();
+        }
     }
 
     public class MotorTrapezoidProfile extends TrapezoidProfile
@@ -875,6 +887,18 @@ public class RealMotorSamples
         {
             pPID.SetSetpoint(s);
             pPID.SetTrigger(true);
+        }
+        
+        @Override
+        public void SetControllerTriggerMode(boolean m)
+        {
+        	pPID.SetTriggerMode(m);
+        }
+        
+        @Override
+        public double GetControllerSetpoint()
+        {
+        	return pPID.GetSetpoint();
         }
     }
 
@@ -906,6 +930,18 @@ public class RealMotorSamples
             cntlr.SetTrigger(true);
             //pPID.SetSetpoint(s);
             //pPID.SetTrigger(true);
+        }
+        
+        @Override
+        public void SetControllerTriggerMode(boolean m)
+        {
+        	cntlr.SetTriggerMode(m);
+        }
+        
+        @Override
+        public double GetControllerSetpoint()
+        {
+        	return cntlr.GetSetpoint();
         }
     }
 }

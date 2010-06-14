@@ -24,6 +24,8 @@ public class Motor
     private double engrgToRawAct; // Convert, eg, DA counts/volt
     private boolean [] switches;  // Homing, end-of-travel, etc.
     private int nSwitches;
+    private boolean homeSet;
+    private double homePosition;
 
     int actChan, posChan, switchChan; // Channel numbers for actuation,
             // position and homing switch channels
@@ -67,6 +69,8 @@ public class Motor
         rawVelocityEst = 0.0;
         rawVelocityMeas = 0.0;
         prevRawPosition = rawPosition;
+        homeSet = false;
+        homePosition = 0.0;
         first = true;
     }
 
@@ -183,5 +187,21 @@ public class Motor
             System.exit(1);
         }
         return switches[i];
+    }
+    
+    public void SetHomePosition(double h)
+    {
+    	homePosition = h;
+    	homeSet = true;
+    }
+    
+    public boolean GetHomeSet()
+    {
+    	return homeSet;
+    }
+    
+    public double GetHomePosition()
+    {
+    	return homePosition;
     }
 }

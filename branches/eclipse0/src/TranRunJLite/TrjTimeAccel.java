@@ -30,11 +30,13 @@
  */
 package TranRunJLite;
 
-import PerfTimerPkg.*;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.*;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+import PerfTimerPkg.PerfTimer;
 
 /**
  * A time class for TranRunJLite that operates in accelerated realtime.
